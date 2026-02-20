@@ -53,11 +53,11 @@ class EntityExtractor:
              entities['type'] = 'credit'
              
         # Priority 2: Check for Debit keywords (prioritize 'debited' over 'credited' when both appear like 'debited...credited to')
-        elif any(w in text_lower for w in ['debited', 'paid', 'sent', 'spent', 'withdrawn', 'transfer']):
+        elif any(w in text_lower for w in ['debited', 'debit', 'upi debit', 'paid', 'sent', 'spent', 'withdrawn', 'transfer']):
             entities['type'] = 'debit'
             
-        # Priority 3: Check for Credit keywords
-        elif any(w in text_lower for w in ['credited', 'received', 'added', 'deposited']):
+        # Priority 3: Check for Credit keywords (including label-style like "UPI Credit:" or "Credit:")
+        elif any(w in text_lower for w in ['credited', 'credit', 'upi credit', 'received', 'added', 'deposited']):
             entities['type'] = 'credit'
         
         # 4. Determine Status
