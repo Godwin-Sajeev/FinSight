@@ -28,32 +28,32 @@ DEMO_MESSAGES = [
     {
         'sender_id': 'VM-SBIUPI',
         'message':   '₹1,250 debited from your account via UPI to Swiggy on 14/01/2026 at 8:43 PM. Ref ID 98374628',
-        'desc':      '✅ Valid SBI debit SMS',
+        'desc':      '[OK] Valid SBI debit SMS',
     },
     {
         'sender_id': 'JD-IPBMSG-S',
         'message':   'A/C X4952 Debit Rs.100.00 for UPI to abhinav ravi on 12-01-26 Ref 601202411884. Avl Bal Rs.669.76-IPPB',
-        'desc':      '✅ Valid IPPB debit SMS',
+        'desc':      '[OK] Valid IPPB debit SMS',
     },
     {
         'sender_id': 'VK-ICICIB',
         'message':   'Your account is credited with Rs 500.00 from John Doe on 15-01-26.',
-        'desc':      '✅ Valid ICICI credit SMS',
+        'desc':      '[OK] Valid ICICI credit SMS',
     },
     {
         'sender_id': 'XX-SPAM01',
-        'message':   'Congratulations! You won ₹50,000. Click here to claim your prize.',
-        'desc':      '❌ Spam — invalid sender ID',
+        'message':   'Congratulations! You won INR 50,000. Click here to claim your prize.',
+        'desc':      '[SPAM] Invalid sender ID',
     },
     {
         'sender_id': 'AM-HDFCBK',
         'message':   'Your OTP is 123456. Do not share this code.',
-        'desc':      '⚠️  Valid sender but NOT a transaction (OTP)',
+        'desc':      '[NOTE] Valid sender but NOT a transaction (OTP)',
     },
     {
         'sender_id': 'BP-AXISBK',
-        'message':   'Transaction of ₹200 to Uber failed due to insufficient funds.',
-        'desc':      '✅ Valid Axis — failed transaction detected',
+        'message':   'Transaction of INR 200 to Uber failed due to insufficient funds.',
+        'desc':      '[OK] Valid Axis -- failed transaction detected',
     },
 ]
 
@@ -62,17 +62,17 @@ SEPARATOR = "─" * 60
 
 def print_banner():
     print()
-    print("╔══════════════════════════════════════════════════════╗")
-    print("║   📱 SMS SIMULATOR — UPI Transaction Monitor        ║")
-    print("║   Fake SMS input for Android Studio virtual phone    ║")
-    print("╚══════════════════════════════════════════════════════╝")
+    print("=" * 56)
+    print("   SMS SIMULATOR -- UPI Transaction Monitor")
+    print("   Fake SMS input for Android Studio virtual phone")
+    print("=" * 56)
     print()
 
 
 def print_sender_list():
     """Print known valid sender IDs for reference."""
     validator = SenderValidator()
-    print("  📋 Valid Bank Sender IDs:")
+    print("  Valid Bank Sender IDs:")
     print("  " + "─" * 40)
 
     # Group by bank
@@ -98,9 +98,9 @@ def process_and_display(agent: UPIAgent, sender_id: str, message: str, label: st
     result = agent.process_message(message, sender_id=sender_id)
 
     if result is None:
-        print("  ❌ REJECTED — message was filtered out (invalid sender or not a transaction)")
+        print("  REJECTED -- message was filtered out (invalid sender or not a transaction)")
     else:
-        print("  ✅ ACCEPTED — extracted data:")
+        print("  ACCEPTED -- extracted data:")
         # Pretty-print with indent
         for key, value in result.items():
             print(f"     {key:<20}: {value}")
@@ -112,7 +112,7 @@ def process_and_display(agent: UPIAgent, sender_id: str, message: str, label: st
 def run_quick_demo(agent: UPIAgent):
     """Run all preset demo messages."""
     print_banner()
-    print("  ⚡ QUICK DEMO MODE — running preset messages\n")
+    print("  QUICK DEMO MODE -- running preset messages\n")
 
     accepted = 0
     rejected = 0
@@ -130,7 +130,7 @@ def run_quick_demo(agent: UPIAgent):
         else:
             rejected += 1
 
-    print(f"\n  📊 Summary: {accepted} accepted, {rejected} rejected out of {len(DEMO_MESSAGES)} messages")
+    print(f"\n  Summary: {accepted} accepted, {rejected} rejected out of {len(DEMO_MESSAGES)} messages")
     print()
 
 
@@ -144,10 +144,10 @@ def run_interactive(agent: UPIAgent):
     while True:
         try:
             # Get sender ID
-            sender_id = input("  📲 Sender ID (e.g. VM-SBIUPI): ").strip()
+            sender_id = input("  Sender ID (e.g. VM-SBIUPI): ").strip()
 
             if sender_id.lower() in ('quit', 'exit', 'q'):
-                print("\n  👋 Goodbye!\n")
+                print("\n  Goodbye!\n")
                 break
 
             if sender_id.lower() == 'list':
@@ -155,21 +155,21 @@ def run_interactive(agent: UPIAgent):
                 continue
 
             if not sender_id:
-                print("  ⚠️  Sender ID cannot be empty. Try again.\n")
+                print("  WARNING: Sender ID cannot be empty. Try again.\n")
                 continue
 
             # Get message body
-            message = input("  💬 SMS Body: ").strip()
+            message = input("  SMS Body: ").strip()
 
             if not message:
-                print("  ⚠️  Message cannot be empty. Try again.\n")
+                print("  WARNING: Message cannot be empty. Try again.\n")
                 continue
 
             # Process
             process_and_display(agent, sender_id, message)
 
         except (KeyboardInterrupt, EOFError):
-            print("\n\n  👋 Goodbye!\n")
+            print("\n\n  Goodbye!\n")
             break
 
 

@@ -59,7 +59,7 @@ class FailurePredictionModel:
         print(f"\n[Model] Training Random Forest with {len(X_train)} samples...")
         self.model.fit(X_train, y_train)
         self.is_trained = True
-        print("[Model] Training complete. ✅")
+        print("[Model] Training complete.")
 
     def evaluate(self, X_test: pd.DataFrame, y_test: pd.Series) -> dict:
         """

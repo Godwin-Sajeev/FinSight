@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/services/ml_service.dart';
+import '../../providers/finance_provider.dart';
 import '../ai_center/widgets/ai_chat_interface.dart';
 
 class AIHubSheet extends StatefulWidget {
@@ -140,78 +143,213 @@ class _AIHubSheetState extends State<AIHubSheet>
   }
 }
 
-// ─── INSIGHTS TAB ───────────────────────────────────────────────────────────
-class _InsightsTab extends StatelessWidget {
+// ─── INSIGHTS TAB (Live ML Data) ────────────────────────────────────────────
+class _InsightsTab extends ConsumerStatefulWidget {
   final ScrollController scrollController;
   const _InsightsTab({required this.scrollController});
 
   @override
+  ConsumerState<_InsightsTab> createState() => _InsightsTabState();
+}
+
+class _InsightsTabState extends ConsumerState<_InsightsTab> {
+  BudgetResult? _budget;
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchBudget();
+  }
+
+  Future<void> _fetchBudget() async {
+    final transactions = ref.read(transactionProvider);
+    final txList = transactions
+        .where((t) => t.isExpense)
+        .map((t) => {
+              'amount':   t.amount,
+              'category': t.category,
+              'status':   'Success',
+            })
+        .toList();
+
+    final result = await MLService.getBudgetSummary(
+      transactions:   txList,
+      monthlyBudget:  15000.0,
+    );
+
+    if (mounted) {
+      setState(() {
+        _budget  = result;
+        _loading = false;
+        _error   = result == null ? 'ML server not reachable. Start the Python server.' : null;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null) {
+      return _buildOfflineView();
+    }
+
+    final b = _budget!;
+    final spentPct  = b.monthlySpendPercentage ?? 0;
+    final remaining = b.remainingBudget;
+
     return ListView(
-      controller: scrollController,
+      controller: widget.scrollController,
       padding: const EdgeInsets.all(AppSpacing.screenPadding),
       children: [
+        // Budget warning banner
+        if (b.isOverBudget)
+          Container(
+            padding: const EdgeInsets.all(12),
+            margin: const EdgeInsets.only(bottom: 14),
+            decoration: BoxDecoration(
+              color: AppColors.danger.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(AppSpacing.radius),
+              border: Border.all(color: AppColors.danger.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.warning_amber_rounded,
+                    color: AppColors.danger, size: 18),
+                const Gap(8),
+                Expanded(
+                  child: Text(b.budgetAlertMessage,
+                      style: AppTypography.textTheme.labelSmall
+                          ?.copyWith(color: AppColors.danger)),
+                ),
+              ],
+            ),
+          ),
+
         _insightCard(
-          icon: LucideIcons.trendingUp,
-          color: AppColors.primaryAccent,
-          title: 'Spending Summary',
-          value: '₹12,400',
-          subtitle: 'spent this week · 8% below last week',
-          isPositive: true,
+          icon:      LucideIcons.trendingUp,
+          color:     AppColors.primaryAccent,
+          title:     'Monthly Spend',
+          value:     'INR ${b.totalMonthlySpend.toStringAsFixed(0)}',
+          subtitle:  '${spentPct.toStringAsFixed(1)}% of INR ${b.monthlyBudget.toStringAsFixed(0)} budget used',
+          isPositive: spentPct < 80,
         ),
         const Gap(14),
         _insightCard(
-          icon: LucideIcons.alertTriangle,
-          color: AppColors.danger,
-          title: 'Risk Alerts',
-          value: '2 alerts',
-          subtitle: 'EMI ₹8,200 due in 4 days · Low balance risk',
-          isPositive: false,
+          icon:      LucideIcons.piggyBank,
+          color:     AppColors.secondaryAccent,
+          title:     'Remaining Budget',
+          value:     'INR ${remaining.toStringAsFixed(0)}',
+          subtitle:  remaining > 0
+              ? 'Budget under control'
+              : 'Budget exceeded!',
+          isPositive: remaining > 0,
         ),
         const Gap(14),
         _insightCard(
-          icon: LucideIcons.piggyBank,
-          color: AppColors.secondaryAccent,
-          title: 'Savings Potential',
-          value: '₹3,200/mo',
-          subtitle: 'Reduce food delivery + cancel unused OTT',
-          isPositive: true,
-        ),
-        const Gap(14),
-        _insightCard(
-          icon: LucideIcons.calendar,
-          color: const Color(0xFFFF9F43),
-          title: 'Monthly Prediction',
-          value: '₹38,500',
-          subtitle: 'Projected spend by month-end at current rate',
+          icon:      LucideIcons.calendar,
+          color:     const Color(0xFFFF9F43),
+          title:     'Today\'s Spend',
+          value:     'INR ${b.totalDailySpend.toStringAsFixed(0)}',
+          subtitle:  '${b.transactionCount} transaction(s) this month',
           isPositive: null,
         ),
         const Gap(20),
-        // Category Heat Map
+
+        // Live category breakdown
+        if (b.categoryBreakdown.isNotEmpty)
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.cardPadding),
+            decoration: BoxDecoration(
+              color:        Colors.white,
+              borderRadius: BorderRadius.circular(AppSpacing.radius),
+              boxShadow:    AppTheme.cardShadow,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Top Spending Categories',
+                    style: AppTypography.textTheme.titleLarge
+                        ?.copyWith(fontSize: 16)),
+                const Gap(14),
+                ..._buildCategoryBars(b),
+              ],
+            ),
+          ),
+        const Gap(80),
+      ],
+    );
+  }
+
+  List<Widget> _buildCategoryBars(BudgetResult b) {
+    if (b.totalMonthlySpend == 0) return [];
+
+    final colors = {
+      'Food':     const Color(0xFFFF9F43),
+      'Shopping': const Color(0xFF00CFE8),
+      'Bills':    const Color(0xFFEA5455),
+      'Travel':   const Color(0xFF7367F0),
+      'Others':   const Color(0xFF28C76F),
+    };
+
+    final sorted = b.categoryBreakdown.entries
+        .where((e) => e.value > 0)
+        .toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    final widgets = <Widget>[];
+    for (int i = 0; i < sorted.length && i < 5; i++) {
+      final e       = sorted[i];
+      final frac    = (e.value / b.totalMonthlySpend).clamp(0.0, 1.0);
+      final color   = colors[e.key] ?? AppColors.primaryAccent;
+      if (i > 0) widgets.add(const Gap(10));
+      widgets.add(_categoryBar(e.key, frac, color));
+    }
+    return widgets;
+  }
+
+  Widget _buildOfflineView() {
+    return ListView(
+      controller: widget.scrollController,
+      padding: const EdgeInsets.all(AppSpacing.screenPadding),
+      children: [
         Container(
-          padding: const EdgeInsets.all(AppSpacing.cardPadding),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Colors.orange.shade50,
             borderRadius: BorderRadius.circular(AppSpacing.radius),
-            boxShadow: AppTheme.cardShadow,
+            border: Border.all(color: Colors.orange.shade200),
           ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Top Spending Categories',
-                  style: AppTypography.textTheme.titleLarge?.copyWith(fontSize: 16)),
-              const Gap(14),
-              _categoryBar('Food & Delivery', 0.78, const Color(0xFFFF9F43)),
-              const Gap(10),
-              _categoryBar('Shopping', 0.55, const Color(0xFF00CFE8)),
-              const Gap(10),
-              _categoryBar('Bills & Utilities', 0.40, const Color(0xFFEA5455)),
-              const Gap(10),
-              _categoryBar('Travel', 0.25, const Color(0xFF7367F0)),
+              const Icon(Icons.wifi_off, size: 40, color: Colors.orange),
+              const Gap(12),
+              const Text(
+                'ML Server Offline',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const Gap(6),
+              const Text(
+                'Start the Python server to see live AI insights:\n\npython api/start_server.py',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 13, color: Colors.black54),
+              ),
+              const Gap(16),
+              ElevatedButton(
+                onPressed: () => setState(() {
+                  _loading = true;
+                  _error   = null;
+                  _fetchBudget();
+                }),
+                child: const Text('Retry'),
+              ),
             ],
           ),
         ),
-        const Gap(80),
       ],
     );
   }
