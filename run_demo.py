@@ -1,4 +1,4 @@
-from src.nlp_agent import UPIAgent
+from nlp.nlp_agent import UPIAgent
 import json
 
 def main():

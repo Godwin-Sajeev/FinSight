@@ -1,0 +1,96 @@
+
+==================================================
+  SMART UPI MONITORING ? TRAINING PIPELINE
+==================================================
+[DataGenerator] Generated 5000 records.
+[DataGenerator] Failure rate: 20.48%
+[Preprocessor] Train size: 4000 | Test size: 1000
+
+[Model] Training Random Forest with 4000 samples...
+[Model] Training complete. ?
+
+==================================================
+          MODEL EVALUATION REPORT
+==================================================
+  Accuracy  : 0.7070  (70.70%)
+  Precision : 0.8130
+  Recall    : 0.8201
+
+  Confusion Matrix (rows=Actual, cols=Predicted):
+                 Predicted Success | Predicted Failure
+  Actual Success          55       |         150
+  Actual Failure         143       |         652
+
+  Full Classification Report:
+              precision    recall  f1-score   support
+
+     Success       0.28      0.27      0.27       205
+     Failure       0.81      0.82      0.82       795
+
+    accuracy                           0.71      1000
+   macro avg       0.55      0.54      0.54      1000
+weighted avg       0.70      0.71      0.71      1000
+
+  Feature Importances (most ? least influential):
+    amount                         0.3430  ?????????????
+    hour_of_day                    0.2206  ????????
+    bank_name                      0.1418  ?????
+    network_status                 0.1316  ?????
+    previous_failures_count        0.1084  ????
+    server_status                  0.0546  ??
+==================================================
+
+[MLAgent] System ready for predictions. ?
+
+
+=======================================================
+  PREDICTION 1: Low Risk Transaction
+=======================================================
+  ML Predicted Label     : Failure
+  ML Failure Probability : 83.57%
+  Combined Probability   : 83.57%
+  Window Risk            : No
+  Alert [HIGH]: ??  HIGH RISK: Transaction may fail. ML failure probability is high (84%). Consider retrying later or switching bank/network.
+  Budget [OK]: ? Budget OK: 2.3% used (?350.00 of ?15,000.00).
+
+=======================================================
+  PREDICTION 2: High ML Risk Transaction
+=======================================================
+  ML Predicted Label     : Failure
+  ML Failure Probability : 58.07%
+  Combined Probability   : 58.07%
+  Window Risk            : No
+  Alert [MEDIUM]: ? MEDIUM RISK: Elevated failure probability (58%). Proceed carefully. If it fails, retry after a few minutes.
+  Budget [OK]: ? Budget OK: 2.3% used (?350.00 of ?15,000.00).
+
+=======================================================
+  PREDICTION 3: Sliding Window High-Risk
+=======================================================
+  ML Predicted Label     : Failure
+  ML Failure Probability : 77.84%
+  Combined Probability   : 77.84%
+  Window Risk            : No
+  Alert [HIGH]: ??  HIGH RISK: Transaction may fail. ML failure probability is high (78%). Consider retrying later or switching bank/network.
+  Budget [OK]: ? Budget OK: 0.0% used (?0.00 of ?15,000.00).
+
+=======================================================
+  NLP -> ML INTEGRATION BRIDGE
+=======================================================
+  NLP Agent Output:
+    {
+        "amount": 500.0,
+        "type": "credit",
+        "merchant": "JINCY T",
+        "date": "20-11-25",
+        "time": "16:54:39",
+        "status": "success",
+        "mode": "UPI",
+        "confidence_score": 0.67
+    }
+
+  ML Failure Probability : 89.39%
+  Alert [HIGH]: ??  HIGH RISK: Transaction may fail. ML failure probability is high (89%). Consider retrying later or switching bank/network.
+
+=======================================================
+  DEMO COMPLETE
+=======================================================

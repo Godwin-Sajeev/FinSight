@@ -1,5 +1,5 @@
 import unittest
-from src.nlp_agent import UPIAgent
+from nlp.nlp_agent import UPIAgent
 
 class TestUPIAgent(unittest.TestCase):
     def setUp(self):
@@ -51,7 +51,48 @@ class TestUPIAgent(unittest.TestCase):
         self.assertEqual(result['amount'], 18.88)
         self.assertEqual(result['type'], 'debit')
 
+    # ── Sender ID Validation Tests ────────────────────────────────
+
+    def test_valid_sender_sbi(self):
+        """Valid SBI sender ID should pass and include bank_name."""
+        text = "₹500 debited from your account via UPI to Amazon on 10/03/2026."
+        result = self.agent.process_message(text, sender_id="VM-SBIUPI")
+        self.assertIsNotNone(result)
+        self.assertEqual(result['bank_name'], 'SBI')
+        self.assertEqual(result['sender_id'], 'VM-SBIUPI')
+
+    def test_valid_sender_ippb(self):
+        """IPPB sender JD-IPBMSG-S should be recognized."""
+        text = "A/C X4952 Debit Rs.100.00 for UPI to abhinav ravi on 12-01-26 Ref 601202411884-IPPB"
+        result = self.agent.process_message(text, sender_id="JD-IPBMSG-S")
+        self.assertIsNotNone(result)
+        self.assertEqual(result['bank_name'], 'IPPB')
+        self.assertEqual(result['sender_id'], 'JD-IPBMSG-S')
+
+    def test_invalid_sender_rejected(self):
+        """Spam/fake sender ID should be rejected (return None)."""
+        text = "₹50,000 debited from your account via UPI to Winner."
+        result = self.agent.process_message(text, sender_id="XX-SPAM01")
+        self.assertIsNone(result)
+
+    def test_no_sender_backwards_compatible(self):
+        """No sender_id = old behavior (still processes without validation)."""
+        text = "₹1,250 debited from your account via UPI to Swiggy on 14/01/2026."
+        result = self.agent.process_message(text)
+        self.assertIsNotNone(result)
+        self.assertEqual(result['amount'], 1250.0)
+        self.assertIsNone(result['sender_id'])   # No sender provided
+        self.assertIsNone(result['bank_name'])
+
+    def test_sender_case_insensitive(self):
+        """Sender matching should be case-insensitive."""
+        text = "₹200 debited from your account via UPI to Flipkart on 10/03/2026."
+        result = self.agent.process_message(text, sender_id="vm-sbiupi")
+        self.assertIsNotNone(result)
+        self.assertEqual(result['bank_name'], 'SBI')
+
 
 
 if __name__ == '__main__':
     unittest.main()
+
