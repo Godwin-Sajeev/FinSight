@@ -41,7 +41,7 @@ def generate_transaction_alert(
         }
     """
     level   = 'LOW'
-    message = '✅ Transaction looks safe. Proceed.'
+    message = 'Transaction looks safe. Proceed.'
 
     # --- Priority 1: HIGH alert ---
     if failure_probability >= HIGH_RISK_ML_THRESHOLD or risk_info.get('is_high_risk'):
@@ -55,7 +55,7 @@ def generate_transaction_alert(
 
         reason_str = ". ".join(reasons)
         message = (
-            f"⚠️  HIGH RISK: Transaction may fail. {reason_str}. "
+            f"HIGH RISK: Transaction may fail. {reason_str}. "
             f"Consider retrying later or switching bank/network."
         )
 
@@ -63,7 +63,7 @@ def generate_transaction_alert(
     elif failure_probability >= MEDIUM_RISK_ML_THRESHOLD:
         level = 'MEDIUM'
         message = (
-            f"🔶 MEDIUM RISK: Elevated failure probability ({failure_probability:.0%}). "
+            f"MEDIUM RISK: Elevated failure probability ({failure_probability:.0%}). "
             f"Proceed carefully. If it fails, retry after a few minutes."
         )
 
@@ -96,8 +96,8 @@ def generate_budget_alert(budget_info: Dict[str, Any]) -> Dict[str, Any]:
         return {
             'level': 'WARNING',
             'message': (
-                f"🚨 BUDGET EXCEEDED: You have spent {pct:.1f}% of your monthly budget "
-                f"(₹{budget_info['total_monthly_spend']:,.2f} / ₹{budget_info['monthly_budget']:,.2f})."
+                f"BUDGET EXCEEDED: You have spent {pct:.1f}% of your monthly budget "
+                f"(INR {budget_info['total_monthly_spend']:,.2f} / INR {budget_info['monthly_budget']:,.2f})."
             )
         }
     elif pct >= 80:
@@ -105,12 +105,12 @@ def generate_budget_alert(budget_info: Dict[str, Any]) -> Dict[str, Any]:
         return {
             'level': 'WARNING',
             'message': (
-                f"⚠️  BUDGET ALERT: You've used {pct:.1f}% of your monthly budget. "
-                f"Only ₹{remaining:,.2f} remaining. Spend wisely!"
+                f"BUDGET ALERT: You've used {pct:.1f}% of your monthly budget. "
+                f"Only INR {remaining:,.2f} remaining. Spend wisely!"
             )
         }
 
     return {
         'level': 'OK',
-        'message': f"✅ Budget OK: {pct:.1f}% used (₹{budget_info['total_monthly_spend']:,.2f} of ₹{budget_info['monthly_budget']:,.2f})."
+        'message': f"Budget OK: {pct:.1f}% used (INR {budget_info['total_monthly_spend']:,.2f} of INR {budget_info['monthly_budget']:,.2f})."
     }

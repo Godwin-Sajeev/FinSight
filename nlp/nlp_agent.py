@@ -37,7 +37,7 @@ class UPIAgent:
             sender_info = self.sender_validator.validate(sender_id)
             if not sender_info['is_valid']:
                 # Reject: not from a verified bank
-                print(f"[UPIAgent] ❌ Rejected — {sender_info['reason']}")
+                print(f"[UPIAgent] REJECTED: {sender_info['reason']}")
                 return None
 
         # ── Step 1: Clean Text ────────────────────────────────────

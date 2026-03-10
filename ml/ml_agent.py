@@ -85,7 +85,7 @@ class MLAgent:
         self.model.evaluate(X_test, y_test)
 
         self._trained = True
-        print("\n[MLAgent] System ready for predictions. ✅\n")
+        print("\n[MLAgent] System ready for predictions.\n")
 
     # ------------------------------------------------------------------
     # PREDICTION
