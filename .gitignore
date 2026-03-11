@@ -39,6 +39,17 @@ app.*.symbols
 # Obfuscation related
 app.*.map.json
 
+# Credentials
+.env
+
+# Logs and temporary files
+*.log
+ml_output.txt
+ml_result.txt
+test.log
+ml_output.log
+/tmp/
+
 # Android Studio will place build artifacts here
 /android/app/debug
 /android/app/profile

@@ -96,17 +96,12 @@ class _AddTransactionScreenState
     if (!_formKey.currentState!.validate()) return;
 
     final tx = TransactionModel(
-      id:           const Uuid().v4(),
-      title:        _titleController.text.trim(),
-      merchantName: _titleController.text.trim(),
-      amount:       double.parse(_amountController.text),
-      date:         _selectedDate,
-      category:     _category,
-      isExpense:    _selectedType == TransactionType.expense,
-      bankSource:   _senderIdController.text.trim().isEmpty
-                        ? null
-                        : _senderIdController.text.trim(),
-      aiComment:    _mlComment,
+      id:       const Uuid().v4(),
+      title:    _titleController.text.trim(),
+      amount:   double.parse(_amountController.text),
+      date:     _selectedDate,
+      category: _category,
+      type:     _selectedType,
     );
 
     ref.read(transactionProvider.notifier).addTransaction(tx);

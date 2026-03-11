@@ -1,45 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../core/theme/app_theme.dart';
-import '../../../core/models/transaction_model.dart';
+import '../../../models/transaction_model.dart';
 import '../../../core/widgets/luxury_glass_card.dart';
+import '../../../providers/finance_provider.dart';
 
-class RecentTransactionsPreview extends StatelessWidget {
+class RecentTransactionsPreview extends ConsumerWidget {
   const RecentTransactionsPreview({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Mock Data
-    final transactions = [
-      TransactionModel(
-        title: 'Swiggy Delivery',
-        merchantName: 'Swiggy',
-        amount: 850,
-        date: DateTime.now().subtract(const Duration(hours: 2)),
-        category: 'Food',
-        isExpense: true,
-      ),
-      TransactionModel(
-        title: 'Netflix Subscription',
-        merchantName: 'Netflix',
-        amount: 649,
-        date: DateTime.now().subtract(const Duration(days: 1)),
-        category: 'Entertainment',
-        isExpense: true,
-      ),
-      TransactionModel(
-        title: 'Salary Credit',
-        merchantName: 'TechCorp Inc',
-        amount: 145000,
-        date: DateTime.now().subtract(const Duration(days: 3)),
-        category: 'Income',
-        isExpense: false,
-      ),
-    ];
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Get real data from provider and sort by newest
+    final allTransactions = ref.watch(transactionProvider);
+    final sortedTxs = List<TransactionModel>.from(allTransactions)
+      ..sort((a, b) => b.date.compareTo(a.date));
+    
+    // Take up to 3 most recent
+    final transactions = sortedTxs.take(3).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -68,7 +49,12 @@ class RecentTransactionsPreview extends StatelessWidget {
         const Gap(AppSpacing.listSpacing),
         LuxuryGlassCard(
           padding: EdgeInsets.zero,
-          child: ListView.separated(
+          child: transactions.isEmpty 
+          ? const Padding(
+              padding: EdgeInsets.all(AppSpacing.cardPadding),
+              child: Center(child: Text("No transactions yet")),
+            )
+          : ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             padding: const EdgeInsets.all(AppSpacing.cardPadding),
@@ -76,6 +62,7 @@ class RecentTransactionsPreview extends StatelessWidget {
             separatorBuilder: (context, index) => const Divider(color: AppColors.divider, height: 24),
             itemBuilder: (context, index) {
               final tx = transactions[index];
+              final isExpense = tx.type == TransactionType.expense;
               return Row(
                 children: [
                   Container(
@@ -85,8 +72,8 @@ class RecentTransactionsPreview extends StatelessWidget {
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
-                      tx.isExpense ? LucideIcons.shoppingCart : LucideIcons.arrowDownLeft,
-                      color: tx.isExpense ? AppColors.textPrimary : AppColors.secondaryAccent,
+                      isExpense ? LucideIcons.shoppingCart : LucideIcons.arrowDownLeft,
+                      color: isExpense ? AppColors.textPrimary : AppColors.secondaryAccent,
                       size: 20,
                     ),
                   ),
@@ -112,10 +99,10 @@ class RecentTransactionsPreview extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        '${tx.isExpense ? "-" : "+"}₹${tx.amount.toInt()}',
+                        '${isExpense ? "-" : "+"}₹${tx.amount.toInt()}',
                         style: AppTypography.textTheme.bodyLarge?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: tx.isExpense ? AppColors.textPrimary : AppColors.secondaryAccent,
+                          color: isExpense ? AppColors.textPrimary : AppColors.secondaryAccent,
                         ),
                       ),
                       Text(

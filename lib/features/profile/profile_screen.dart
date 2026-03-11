@@ -6,7 +6,9 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/providers/theme_provider.dart';
-import '../auth/login_screen.dart';
+import '../auth/email_screen.dart';
+import '../../core/services/ml_service.dart';
+import 'linked_bank_accounts_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -64,7 +66,9 @@ class ProfileScreen extends ConsumerWidget {
               ),
               child: Column(
                 children: [
-                  _buildItem(context, LucideIcons.landmark, 'Linked Bank Accounts', isFirst: true),
+                  _buildItem(context, LucideIcons.landmark, 'Linked Bank Accounts', isFirst: true, onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const LinkedBankAccountsScreen()));
+                  }),
                   _buildItem(context, LucideIcons.bellRing, 'Notification Settings'),
                   // ── Dark Mode (wired) ──────────────────────
                   _buildDarkModeItem(context, ref, isDark),
@@ -91,11 +95,14 @@ class ProfileScreen extends ConsumerWidget {
               ),
               child: ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                onTap: () {
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (_) => const LoginScreen()),
-                    (route) => false,
-                  );
+                onTap: () async {
+                  await MLService.logout();
+                  if (context.mounted) {
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => const EmailScreen()),
+                      (route) => false,
+                    );
+                  }
                 },
                 leading: Container(
                   padding: const EdgeInsets.all(10),
@@ -153,11 +160,13 @@ class ProfileScreen extends ConsumerWidget {
     String title, {
     bool isFirst = false,
     bool isLast = false,
+    VoidCallback? onTap,
   }) {
     return Column(
       children: [
         ListTile(
           contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          onTap: onTap,
           leading: Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(

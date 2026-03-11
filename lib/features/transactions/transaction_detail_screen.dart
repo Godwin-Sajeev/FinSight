@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import '../../core/models/transaction_model.dart';
+import '../../models/transaction_model.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
@@ -14,6 +14,8 @@ class TransactionDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isExpense = transaction.type == TransactionType.expense;
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text('Transaction Details'),
@@ -26,27 +28,27 @@ class TransactionDetailScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: transaction.isExpense 
+                color: isExpense 
                     ? AppColors.textPrimary.withOpacity(0.05)
                     : AppColors.secondaryAccent.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                transaction.isExpense ? LucideIcons.shoppingBag : LucideIcons.arrowDownLeft,
+                isExpense ? LucideIcons.shoppingBag : LucideIcons.arrowDownLeft,
                 size: 48,
-                color: transaction.isExpense ? AppColors.textPrimary : AppColors.secondaryAccent,
+                color: isExpense ? AppColors.textPrimary : AppColors.secondaryAccent,
               ),
             ),
             const Gap(24),
             Text(
-              transaction.merchantName,
+              transaction.title,
               style: AppTypography.textTheme.displayMedium,
             ),
             const Gap(8),
             Text(
-              '${transaction.isExpense ? "-" : "+"}₹${transaction.amount.toStringAsFixed(2)}',
+              '${isExpense ? "-" : "+"}₹${transaction.amount.toStringAsFixed(2)}',
               style: AppTypography.textTheme.displayLarge?.copyWith(
-                color: transaction.isExpense ? AppColors.textPrimary : AppColors.secondaryAccent,
+                color: isExpense ? AppColors.textPrimary : AppColors.secondaryAccent,
               ),
             ),
             const Gap(32),
@@ -65,49 +67,13 @@ class TransactionDetailScreen extends StatelessWidget {
                   _buildDetailRow('Category', transaction.category),
                   const Divider(color: AppColors.divider, height: 1),
                   _buildDetailRow('Payment Method', 'UPI'), // Mock
-                  const Divider(color: AppColors.divider, height: 1),
-                  _buildDetailRow('Source', transaction.bankSource ?? 'Auto-detected via SMS'),
+                  // The real model does not have bankSource or aiComment natively mapped 
+                  // to the main UI yet, so removing them for now or using defaults.
                 ],
               ),
             ),
             
             const Gap(24),
-
-            // AI Insight box
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.primaryAccent.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(AppSpacing.smallRadius),
-                border: Border.all(color: AppColors.primaryAccent.withOpacity(0.2)),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(LucideIcons.sparkles, color: AppColors.primaryAccent),
-                  const Gap(12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'AI Insight',
-                          style: AppTypography.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primaryAccent,
-                          ),
-                        ),
-                        const Gap(4),
-                        Text(
-                          transaction.aiComment ?? 'Recurring subscription detected. Expecting the next deduction on ${transaction.date.day} of next month.',
-                          style: AppTypography.textTheme.bodyMedium,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ],
         ),
       ),

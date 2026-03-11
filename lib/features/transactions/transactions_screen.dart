@@ -1,48 +1,49 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
-import '../../core/models/transaction_model.dart';
+import '../../models/transaction_model.dart';
+import '../../providers/finance_provider.dart';
 import 'transaction_detail_screen.dart';
 
-class TransactionsScreen extends StatelessWidget {
+class TransactionsScreen extends ConsumerWidget {
   const TransactionsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Mock Data
-    final todayTransactions = [
-      TransactionModel(
-        title: 'Swiggy Delivery',
-        merchantName: 'Swiggy',
-        amount: 850,
-        date: DateTime.now().subtract(const Duration(hours: 2)),
-        category: 'Food',
-        isExpense: true,
-      ),
-      TransactionModel(
-        title: 'Uber Ride',
-        merchantName: 'Uber',
-        amount: 320,
-        date: DateTime.now().subtract(const Duration(hours: 5)),
-        category: 'Travel',
-        isExpense: true,
-      ),
-    ];
+  Widget build(BuildContext context, WidgetRef ref) {
+    final transactions = ref.watch(transactionProvider);
 
-    final yesterdayTransactions = [
-      TransactionModel(
-        title: 'Netflix Subscription',
-        merchantName: 'Netflix',
-        amount: 649,
-        date: DateTime.now().subtract(const Duration(days: 1)),
-        category: 'Entertainment',
-        isExpense: true,
-      ),
-    ];
+    // Sort transactions by date (newest first)
+    final sortedTxs = List<TransactionModel>.from(transactions)
+      ..sort((a, b) => b.date.compareTo(a.date));
+
+    final now = DateTime.now();
+    final todayTransactions = sortedTxs.where((tx) {
+      return tx.date.year == now.year &&
+          tx.date.month == now.month &&
+          tx.date.day == now.day;
+    }).toList();
+
+    final yesterday = now.subtract(const Duration(days: 1));
+    final yesterdayTransactions = sortedTxs.where((tx) {
+      return tx.date.year == yesterday.year &&
+          tx.date.month == yesterday.month &&
+          tx.date.day == yesterday.day;
+    }).toList();
+
+    final olderTransactions = sortedTxs.where((tx) {
+      final isToday = tx.date.year == now.year &&
+          tx.date.month == now.month &&
+          tx.date.day == now.day;
+      final isYesterday = tx.date.year == yesterday.year &&
+          tx.date.month == yesterday.month &&
+          tx.date.day == yesterday.day;
+      return !isToday && !isYesterday;
+    }).toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -54,23 +55,36 @@ class TransactionsScreen extends StatelessWidget {
           )
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Gap(16),
-            _buildDateGroup(context, 'TODAY', todayTransactions),
-            const Gap(24),
-            _buildDateGroup(context, 'YESTERDAY', yesterdayTransactions),
-            const Gap(80), // For bottom nav
-          ],
-        ),
-      ),
+      body: transactions.isEmpty
+          ? const Center(child: Text('No transactions yet. Add some!'))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.screenPadding),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Gap(16),
+                  if (todayTransactions.isNotEmpty) ...[
+                    _buildDateGroup(context, ref, 'TODAY', todayTransactions),
+                    const Gap(24),
+                  ],
+                  if (yesterdayTransactions.isNotEmpty) ...[
+                    _buildDateGroup(context, ref, 'YESTERDAY', yesterdayTransactions),
+                    const Gap(24),
+                  ],
+                  if (olderTransactions.isNotEmpty) ...[
+                    _buildDateGroup(context, ref, 'OLDER', olderTransactions),
+                    const Gap(80),
+                  ],
+                  if (olderTransactions.isEmpty) const Gap(80), // For bottom nav
+                ],
+              ),
+            ),
     );
   }
 
-  Widget _buildDateGroup(BuildContext context, String title, List<TransactionModel> txs) {
+  Widget _buildDateGroup(BuildContext context, WidgetRef ref, String title,
+      List<TransactionModel> txs) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -92,12 +106,17 @@ class TransactionsScreen extends StatelessWidget {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: txs.length,
-            separatorBuilder: (context, index) => const Divider(color: AppColors.divider, height: 1),
+            separatorBuilder: (context, index) =>
+                const Divider(color: AppColors.divider, height: 1),
             itemBuilder: (context, index) {
               final tx = txs[index];
+              final isExpense = tx.type == TransactionType.expense;
               return Dismissible(
                 key: Key(tx.id),
                 direction: DismissDirection.endToStart,
+                onDismissed: (direction) {
+                  ref.read(transactionProvider.notifier).deleteTransaction(tx.id);
+                },
                 background: Container(
                   alignment: Alignment.centerRight,
                   padding: const EdgeInsets.only(right: 24),
@@ -108,7 +127,8 @@ class TransactionsScreen extends StatelessWidget {
                   child: const Icon(LucideIcons.trash2, color: Colors.white),
                 ),
                 child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   leading: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -116,8 +136,12 @@ class TransactionsScreen extends StatelessWidget {
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
-                      tx.isExpense ? LucideIcons.shoppingBag : LucideIcons.arrowDownLeft,
-                      color: tx.isExpense ? AppColors.textPrimary : AppColors.secondaryAccent,
+                      isExpense
+                          ? LucideIcons.shoppingBag
+                          : LucideIcons.arrowDownLeft,
+                      color: isExpense
+                          ? AppColors.textPrimary
+                          : AppColors.secondaryAccent,
                       size: 20,
                     ),
                   ),
@@ -136,10 +160,12 @@ class TransactionsScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        '${tx.isExpense ? "-" : "+"}₹${tx.amount.toInt()}',
+                        '${isExpense ? "-" : "+"}₹${tx.amount.toInt()}',
                         style: AppTypography.textTheme.bodyLarge?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: tx.isExpense ? AppColors.textPrimary : AppColors.secondaryAccent,
+                          color: isExpense
+                              ? AppColors.textPrimary
+                              : AppColors.secondaryAccent,
                         ),
                       ),
                       Text(
@@ -152,7 +178,8 @@ class TransactionsScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => TransactionDetailScreen(transaction: tx),
+                        builder: (context) =>
+                            TransactionDetailScreen(transaction: tx),
                       ),
                     );
                   },
@@ -165,3 +192,4 @@ class TransactionsScreen extends StatelessWidget {
     );
   }
 }
+

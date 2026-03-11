@@ -50,10 +50,10 @@ class DataPreprocessor:
         df = df.copy()
 
         # 1. Handle missing values
-        df['amount'].fillna(df['amount'].median(), inplace=True)
-        df['previous_failures_count'].fillna(0, inplace=True)
+        df['amount'] = df['amount'].fillna(df['amount'].median())
+        df['previous_failures_count'] = df['previous_failures_count'].fillna(0)
         for col in ['bank_name', 'network_status', 'server_status']:
-            df[col].fillna('Unknown', inplace=True)
+            df[col] = df[col].fillna('Unknown')
 
         # 2. Encode categorical features
         categorical_cols = ['bank_name', 'network_status', 'server_status']
