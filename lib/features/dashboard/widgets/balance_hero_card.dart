@@ -1,16 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../providers/finance_provider.dart';
 
-class BalanceHeroCard extends StatelessWidget {
+class BalanceHeroCard extends ConsumerWidget {
   const BalanceHeroCard({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final notifier = ref.watch(transactionProvider.notifier);
+    
+    // We also need to watch the provider state to rebuild when transactions change
+    ref.watch(transactionProvider);
+
+    final double totalIncome = notifier.totalIncome();
+    final double totalExpense = notifier.totalExpense();
+    final double totalBalance = totalIncome - totalExpense;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.screenPadding),
@@ -43,7 +54,7 @@ class BalanceHeroCard extends StatelessWidget {
           ),
           const Gap(12),
           Text(
-            '₹ 1,24,500',
+            '₹ ${totalBalance.toInt()}',
             style: AppTypography.textTheme.displayLarge?.copyWith(
               color: Colors.white,
             ),
@@ -52,8 +63,8 @@ class BalanceHeroCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildFlowItem('Income', '₹ 45,000', LucideIcons.arrowDownLeft, AppColors.secondaryAccent),
-              _buildFlowItem('Expense', '₹ 12,400', LucideIcons.arrowUpRight, AppColors.danger),
+              _buildFlowItem('Income', '₹ ${totalIncome.toInt()}', LucideIcons.arrowDownLeft, AppColors.secondaryAccent),
+              _buildFlowItem('Expense', '₹ ${totalExpense.toInt()}', LucideIcons.arrowUpRight, AppColors.danger),
             ],
           )
         ],

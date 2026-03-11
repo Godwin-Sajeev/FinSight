@@ -9,6 +9,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/services/ml_service.dart';
 import '../../providers/finance_provider.dart';
 import '../ai_center/widgets/ai_chat_interface.dart';
+import '../../models/transaction_model.dart';
 
 class AIHubSheet extends StatefulWidget {
   const AIHubSheet({super.key});
@@ -166,7 +167,7 @@ class _InsightsTabState extends ConsumerState<_InsightsTab> {
   Future<void> _fetchBudget() async {
     final transactions = ref.read(transactionProvider);
     final txList = transactions
-        .where((t) => t.isExpense)
+        .where((t) => t.type == TransactionType.expense)
         .map((t) => {
               'amount':   t.amount,
               'category': t.category,

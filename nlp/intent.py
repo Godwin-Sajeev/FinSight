@@ -1,7 +1,7 @@
 class IntentDetector:
     # Keywords that strongly suggest a transaction
     TRANSACTION_KEYWORDS = {
-        'debited', 'credited', 'paid', 'sent', 'received', 'spent', 'transferred', 'withdrawn', 'payment', 'txn', 'upi', 'transaction', 'debit', 'credit', 'transfer'
+        'debited', 'credited', 'paid', 'sent', 'received', 'spent', 'transferred', 'withdrawn', 'payment', 'txn', 'upi', 'transaction', 'debit', 'credit', 'transfer', 'recharged', 'purchased', 'avl bal'
     }
 
     # Keywords that suggest non-transactional messages

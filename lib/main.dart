@@ -5,18 +5,23 @@ import 'core/theme/app_theme.dart';
 import 'core/providers/theme_provider.dart';
 import 'core/models/transaction_model.dart';
 import 'core/models/ai_insight_model.dart';
-import 'features/auth/login_screen.dart';
+import 'features/auth/email_screen.dart';
+import 'features/navigation/main_nav_screen.dart';
+import 'core/services/ml_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
   Hive.registerAdapter(TransactionModelAdapter());
   Hive.registerAdapter(AIInsightModelAdapter());
-  runApp(const ProviderScope(child: FinSightApp()));
+  
+  final loggedIn = await MLService.isLoggedIn();
+  runApp(ProviderScope(child: FinSightApp(initialScreen: loggedIn ? const MainNavScreen() : const EmailScreen())));
 }
 
 class FinSightApp extends ConsumerWidget {
-  const FinSightApp({super.key});
+  final Widget initialScreen;
+  const FinSightApp({super.key, required this.initialScreen});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -27,7 +32,7 @@ class FinSightApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
-      home: const LoginScreen(),
+      home: initialScreen,
     );
   }
 }

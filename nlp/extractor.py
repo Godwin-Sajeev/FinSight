@@ -4,7 +4,9 @@ from typing import Dict, Any, Optional
 
 class EntityExtractor:
     # Regex patterns
-    AMOUNT_PATTERN = r'(?i)(?:INR|Rs\.?)\s*([\d,]+(?:\.\d{1,2})?)'
+    # Regex patterns
+    # Handles: Rs. 100, INR 100, INR Rs. 100, Rs 100, ₹ 100, Amt: 100
+    AMOUNT_PATTERN = r'(?i)(?:INR|Rs\.?|₹|Amt:?)\s*([\d,]+(?:\.\d{1,2})?)'
     
     # Common date formats: 14/01/2026, 14-01-26, 14 Jan 2026
     DATE_PATTERN = r'(\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{2,4})'
@@ -49,7 +51,7 @@ class EntityExtractor:
         text_lower = text.lower()
         
         # Priority 1: Check for explicit Credit indicators that override generic debit words
-        if any(w in text_lower for w in ['refund', 'reversed', 'credited back', 'return']):
+        if any(w in text_lower for w in ['refund', 'reversed', 'credited back', 'return', 'upi credit']):
              entities['type'] = 'credit'
              
         # Priority 2: Check for Debit keywords (prioritize 'debited' over 'credited' when both appear like 'debited...credited to')
@@ -57,41 +59,37 @@ class EntityExtractor:
             entities['type'] = 'debit'
             
         # Priority 3: Check for Credit keywords (including label-style like "UPI Credit:" or "Credit:")
-        elif any(w in text_lower for w in ['credited', 'credit', 'upi credit', 'received', 'added', 'deposited']):
+        elif any(w in text_lower for w in ['credited', 'credit', 'received', 'added', 'deposited']):
             entities['type'] = 'credit'
         
         # 4. Determine Status
         if any(w in text_lower for w in ['failed', 'declined', 'unsuccessful']):
             entities['status'] = 'failed'
         else:
-            # Default to success if it looks like a transaction and isn't failed
-            # This is a strong assumption, but standard for completed txn SMS
             entities['status'] = 'success'
 
-        # 5. Determine Type & Merchant (Iterative Refinement)
-        
-        # Heuristic: infer type from prepositions if not explicitly found
-        if entities['type'] is None:
-            if re.search(r'\bto\s+', text_lower):
-                entities['type'] = 'debit'
-            elif re.search(r'\bfrom\s+', text_lower):
-                 entities['type'] = 'credit'
-
+        # 5. Determine Merchant
         merchant_match = None
+        
+        # Pattern A: "paid to X", "sent to X"
         if entities['type'] == 'debit':
-            # "paid to X", "sent to X", "to X"
-            # Try to grab text between 'to' and next keyword or end
-            match = re.search(r'(?i)\bto\s+([^,.]+?)(?:\s+(?:on|at|via|using|ref|fees|failed|due)|$)', text)
-            if match:
-                # Remove extra spaces if captured
-                merchant_match = re.sub(r'\s+', ' ', match.group(1)).strip()
-        elif entities['type'] == 'credit':
-             # "received from X", "from X"
-            match = re.search(r'(?i)\bfrom\s+([^,.]+?)(?:\s+(?:on|at|via|using|ref)|$)', text)
+            match = re.search(r'(?i)\b(?:to|paid to|sent to)\s+([^,.]+?)(?:\s+(?:on|at|via|using|ref|fees|failed|due)|$)', text)
             if match:
                 merchant_match = match.group(1)
-        
+                
+        # Pattern B: "received from X"
+        elif entities['type'] == 'credit':
+            match = re.search(r'(?i)\b(?:from|received from)\s+([^,.]+?)(?:\s+(?:on|at|via|using|ref)|$)', text)
+            if match:
+                merchant_match = match.group(1)
+
+        # Pattern C: Info:UPI/REF/MERCHANT (Specific to South Indian Bank & others)
+        if not merchant_match:
+            match = re.search(r'(?i)info:upi/[^/]+/[^/]+/([^/ ]+)', text)
+            if match:
+                merchant_match = match.group(1)
+
         if merchant_match:
-            entities['merchant'] = merchant_match.strip()
+            entities['merchant'] = re.sub(r'\s+', ' ', merchant_match).strip()
 
         return entities

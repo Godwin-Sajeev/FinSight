@@ -1,16 +1,80 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:gap/gap.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../models/transaction_model.dart';
+import '../../../../providers/finance_provider.dart';
 
-class CategoryDonutChart extends StatelessWidget {
+class CategoryDonutChart extends ConsumerWidget {
   final int selectedPeriod; // 0=Daily, 1=Monthly, 2=Yearly
   const CategoryDonutChart({super.key, required this.selectedPeriod});
 
+  List<(String, double, Color)> _getCategoryData(List<TransactionModel> transactions) {
+    // Return Top 4 + Other
+    final expenses = transactions.where((tx) => tx.type == TransactionType.expense).toList();
+    final now = DateTime.now();
+
+    Iterable<TransactionModel> filteredTxs;
+    if (selectedPeriod == 0) {
+      filteredTxs = expenses.where((tx) => tx.date.year == now.year && tx.date.month == now.month && tx.date.day == now.day);
+    } else if (selectedPeriod == 2) {
+      filteredTxs = expenses.where((tx) => tx.date.year == now.year);
+    } else {
+      filteredTxs = expenses.where((tx) => tx.date.year == now.year && tx.date.month == now.month);
+    }
+
+    final categoryMap = <String, double>{};
+    double total = 0;
+    for (var tx in filteredTxs) {
+      categoryMap[tx.category] = (categoryMap[tx.category] ?? 0) + tx.amount;
+      total += tx.amount;
+    }
+
+    if (total == 0 || categoryMap.isEmpty) {
+      return [('No Data', 100, AppColors.divider)];
+    }
+
+    // Sort by amount descending
+    final sortedCategories = categoryMap.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    // Colors roughly matching theme or generic palette
+    final colorPalette = [
+      const Color(0xFFFF9F43), // Orange
+      const Color(0xFF00CFE8), // Cyan
+      const Color(0xFFEA5455), // Red
+      const Color(0xFF7367F0), // Purple
+      AppColors.divider,       // Grey
+    ];
+
+    final result = <(String, double, Color)>[];
+    double otherAmount = 0;
+
+    for (int i = 0; i < sortedCategories.length; i++) {
+      if (i < 4) {
+        final percentage = (sortedCategories[i].value / total) * 100;
+        result.add((sortedCategories[i].key, percentage, colorPalette[i]));
+      } else {
+        otherAmount += sortedCategories[i].value;
+      }
+    }
+
+    if (otherAmount > 0) {
+      final percentage = (otherAmount / total) * 100;
+      result.add(('Other', percentage, colorPalette[4]));
+    }
+
+    return result;
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final transactions = ref.watch(transactionProvider);
+    final data = _getCategoryData(transactions);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -44,7 +108,7 @@ class CategoryDonutChart extends StatelessWidget {
                     PieChartData(
                       sectionsSpace: 2,
                       centerSpaceRadius: 40,
-                      sections: _sectionsFor(selectedPeriod),
+                      sections: _sectionsFor(data),
                     ),
                   ),
                 ),
@@ -53,7 +117,7 @@ class CategoryDonutChart extends StatelessWidget {
               Expanded(
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 300),
-                  child: _legendFor(selectedPeriod),
+                  child: _legendFor(selectedPeriod, data),
                 ),
               ),
             ],
@@ -63,31 +127,23 @@ class CategoryDonutChart extends StatelessWidget {
     );
   }
 
-  List<PieChartSectionData> _sectionsFor(int period) {
-    // Different data per period
-    final data = period == 0
-        ? [('Food', 45, const Color(0xFFFF9F43)), ('Bills', 30, const Color(0xFFEA5455)), ('Other', 25, AppColors.divider)]
-        : period == 2
-            ? [('Food', 28, const Color(0xFFFF9F43)), ('Shopping', 30, const Color(0xFF00CFE8)), ('Bills', 22, const Color(0xFFEA5455)), ('Travel', 20, const Color(0xFF7367F0))]
-            : [('Food', 35, const Color(0xFFFF9F43)), ('Shopping', 22, const Color(0xFF00CFE8)), ('Bills', 18, const Color(0xFFEA5455)), ('Travel', 10, const Color(0xFF7367F0)), ('Other', 15, AppColors.divider)];
-
-    return data.map((e) => PieChartSectionData(color: e.$3, value: e.$2.toDouble(), title: '', radius: 20)).toList();
+  List<PieChartSectionData> _sectionsFor(List<(String, double, Color)> data) {
+    return data.map((e) => PieChartSectionData(
+      color: e.$3, 
+      value: e.$2, 
+      title: '', 
+      radius: 20
+    )).toList();
   }
 
-  Widget _legendFor(int period) {
-    final data = period == 0
-        ? [('Food', 45, const Color(0xFFFF9F43)), ('Bills', 30, const Color(0xFFEA5455)), ('Other', 25, AppColors.divider)]
-        : period == 2
-            ? [('Food', 28, const Color(0xFFFF9F43)), ('Shopping', 30, const Color(0xFF00CFE8)), ('Bills', 22, const Color(0xFFEA5455)), ('Travel', 20, const Color(0xFF7367F0))]
-            : [('Food', 35, const Color(0xFFFF9F43)), ('Shopping', 22, const Color(0xFF00CFE8)), ('Bills', 18, const Color(0xFFEA5455)), ('Travel', 10, const Color(0xFF7367F0))];
-
+  Widget _legendFor(int period, List<(String, double, Color)> data) {
     return Column(
       key: ValueKey(period),
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: data.map((e) => Padding(
         padding: const EdgeInsets.only(bottom: 8),
-        child: _buildLegend(e.$1, e.$2, e.$3),
+        child: _buildLegend(e.$1, e.$2.toInt(), e.$3),
       )).toList(),
     );
   }

@@ -17,40 +17,37 @@ class UPIAgent:
     ) -> Optional[Dict[str, Any]]:
         """
         Main NLP pipeline:
-        0. Validate Sender ID  (NEW — rejects spam/fake senders)
         1. Clean Text
-        2. Check Intent
-        3. Extract Entities
-        4. Attach sender info + confidence score
-
-        Parameters:
-            raw_text  (str):  The raw SMS body text.
-            sender_id (str):  SMS sender ID, e.g. 'VM-SBIUPI', 'JD-IPBMSG-S'.
-                              If None, sender validation is skipped (backward compatible).
-
-        Returns:
-            dict with extracted entities + sender info, or None if rejected.
+        2. Check Intent (Transaction vs Spam/OTP)
+        3. Validate Sender ID (Lenient: allow unknown senders if intent is valid)
+        4. Extract Entities
+        5. Attach sender info + confidence score
         """
-        # ── Step 0: Sender ID Validation ──────────────────────────
-        sender_info = None
-        if sender_id is not None:
-            sender_info = self.sender_validator.validate(sender_id)
-            if not sender_info['is_valid']:
-                # Reject: not from a verified bank
-                print(f"[UPIAgent] REJECTED: {sender_info['reason']}")
-                return None
-
         # ── Step 1: Clean Text ────────────────────────────────────
         cleaned_text = TextCleaner.clean(raw_text)
 
         # ── Step 2: Intent Detection ─────────────────────────────
+        # We check intent EARLY. If it's not a transaction, we stop immediately.
         if not IntentDetector.is_transaction(cleaned_text):
             return None
 
-        # ── Step 3: Entity Extraction ─────────────────────────────
+        # ── Step 3: Sender ID Validation (Lenient) ────────────────
+        sender_info = None
+        if sender_id is not None:
+            sender_info = self.sender_validator.validate(sender_id)
+            
+            # If sender is invalid but we already know it's a transaction intent,
+            # we DON'T reject. We just treat it as an unverified sender.
+            if not sender_info['is_valid']:
+                print(f"[UPIAgent] WARNING: Unverified sender '{sender_id}'. Proceeding because intent is valid.")
+                # We'll use the provided sender_id but keep bank_name as None
+                sender_info['bank_name'] = None
+                sender_info['is_valid'] = True # Mark as "valid enough to proceed"
+
+        # ── Step 4: Entity Extraction ─────────────────────────────
         entities = EntityExtractor.extract(cleaned_text)
 
-        # ── Step 4: Attach sender metadata ───────────────────────
+        # ── Step 5: Attach sender metadata ───────────────────────
         if sender_info:
             entities['sender_id'] = sender_info['sender_id']
             entities['bank_name'] = sender_info['bank_name']

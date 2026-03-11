@@ -33,6 +33,14 @@ dependencies:
   # HTTP client for ML/NLP API
   http: ^1.2.1
 
+  # Real SMS Reading
+  flutter_sms_inbox: ^1.0.4
+  permission_handler: ^11.3.1
+
+  # Authentication UI & Persistence
+  shared_preferences: ^2.2.2
+  pin_code_fields: ^8.0.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

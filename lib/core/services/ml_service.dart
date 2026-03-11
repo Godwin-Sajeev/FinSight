@@ -8,10 +8,80 @@
 
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import '../models/transaction_model.dart';
 
 class MLService {
-  // Android emulator: 10.0.2.2 = the host machine's localhost
-  static const String _baseUrl = 'http://10.0.2.2:8000';
+  // Real device: Use your PC's LAN IP
+  static const String _baseUrl = 'http://172.26.2.91:8001';
+
+  // ── Authentication ─────────────────────────────────────────────────────────
+
+  /// Sends a real 6-digit OTP to the provided email.
+  static Future<Map<String, dynamic>> sendOtp(String email) async {
+    try {
+      print('[MLService] Calling /auth/send-otp for $email');
+      final res = await http.post(
+        Uri.parse('$_baseUrl/auth/send-otp'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email}),
+      ).timeout(const Duration(seconds: 10));
+
+      print('[MLService] Response status: ${res.statusCode}');
+      print('[MLService] Response body: ${res.body}');
+
+      return jsonDecode(res.body);
+    } catch (e) {
+      print('[MLService] sendOtp error: $e');
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  /// Verifies the OTP and saves the token to SharedPreferences on success.
+  static Future<Map<String, dynamic>> verifyOtp(String email, String otp) async {
+    try {
+      print('[MLService] Calling /auth/verify-otp for $email');
+      final res = await http.post(
+        Uri.parse('$_baseUrl/auth/verify-otp'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': email,
+          'otp': otp,
+        }),
+      ).timeout(const Duration(seconds: 10));
+
+      print('[MLService] Response status: ${res.statusCode}');
+      final data = jsonDecode(res.body);
+      
+      if (data['success'] == true && data['token'] != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('auth_token', data['token']);
+        await prefs.setString('user_email', email);
+      }
+      
+      return data;
+    } catch (e) {
+      print('[MLService] verifyOtp error: $e');
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  /// Checks if the user is currently logged in.
+  static Future<bool> isLoggedIn() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.containsKey('auth_token');
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Logs out the user by clearing the token.
+  static Future<void> logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('auth_token');
+    await prefs.remove('user_email');
+  }
 
   // ── Health check ───────────────────────────────────────────────────────────
   /// Returns true if the Python server is running and ML model is trained.
