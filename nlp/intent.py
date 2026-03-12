@@ -6,7 +6,7 @@ class IntentDetector:
 
     # Keywords that suggest non-transactional messages
     IGNORE_KEYWORDS = {
-        'otp', 'login', 'code is', 'verification', 'offer', 'reward', 'win', 'loan', 'expire'
+        'otp', 'login', 'code is', 'verification', 'offer', 'reward', 'win', 'won', 'prize', 'loan', 'expire'
     }
 
     @classmethod

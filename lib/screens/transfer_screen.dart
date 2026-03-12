@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../models/transaction_model.dart';
+import '../core/models/transaction_model.dart';
 import '../providers/finance_provider.dart';
 import '../core/ai_engine.dart';
 
@@ -114,14 +114,12 @@ class _TransferScreenState
                     .read(transactionProvider.notifier)
                     .addTransaction(
                       TransactionModel(
-                        id: DateTime.now()
-                            .millisecondsSinceEpoch
-                            .toString(),
                         title: _titleController.text,
+                        merchantName: 'Transfer',
                         amount: amount,
                         date: DateTime.now(),
                         category: selectedCategory,
-                        type: TransactionType.expense,
+                        isExpense: true,
                       ),
                     );
 

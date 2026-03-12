@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
-import '../models/transaction_model.dart';
+import '../core/models/transaction_model.dart';
 
 final transactionProvider =
     StateNotifierProvider<FinanceNotifier, List<TransactionModel>>((ref) {
@@ -31,13 +31,13 @@ class FinanceNotifier extends StateNotifier<List<TransactionModel>> {
 
   double totalIncome() {
     return state
-        .where((t) => t.type == TransactionType.income)
+        .where((t) => !t.isExpense)
         .fold(0, (sum, t) => sum + t.amount);
   }
 
   double totalExpense() {
     return state
-        .where((t) => t.type == TransactionType.expense)
+        .where((t) => t.isExpense)
         .fold(0, (sum, t) => sum + t.amount);
   }
 }

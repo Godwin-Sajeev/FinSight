@@ -6,7 +6,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_theme.dart';
-import '../../models/transaction_model.dart';
+import '../../core/models/transaction_model.dart';
 import '../../providers/finance_provider.dart';
 import 'transaction_detail_screen.dart';
 
@@ -110,7 +110,7 @@ class TransactionsScreen extends ConsumerWidget {
                 const Divider(color: AppColors.divider, height: 1),
             itemBuilder: (context, index) {
               final tx = txs[index];
-              final isExpense = tx.type == TransactionType.expense;
+              final isExpense = tx.isExpense;
               return Dismissible(
                 key: Key(tx.id),
                 direction: DismissDirection.endToStart,

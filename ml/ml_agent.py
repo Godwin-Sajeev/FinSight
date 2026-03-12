@@ -58,7 +58,7 @@ class MLAgent:
     # TRAINING
     # ------------------------------------------------------------------
 
-    def train(self, n_records: int = 5000) -> None:
+    def train(self, n_records: int = 15000) -> None:
         """
         Generate synthetic data, preprocess, and train the Random Forest model.
 
