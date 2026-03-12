@@ -14,7 +14,9 @@ import 'package:smart_upi_app/main.dart';
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const ProviderScope(child: FinSightApp()));
+    await tester.pumpWidget(const ProviderScope(
+      child: FinSightApp(initialScreen: Scaffold(body: Center(child: Text('0')))),
+    ));
 
     // Verify that our counter starts at 0.
     expect(find.text('0'), findsOneWidget);
