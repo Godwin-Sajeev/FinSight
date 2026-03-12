@@ -14,7 +14,8 @@ services:
         sync: false
 
   # Frontend (Flutter Web)
-  - type: static
+  - type: web
     name: finsight-frontend
+    runtime: static
     buildCommand: flutter build web --release
     staticPublishPath: build/web
