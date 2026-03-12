@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/finance_provider.dart';
 import '../widgets/fintech_card.dart';
-import '../models/transaction_model.dart';
+import '../core/models/transaction_model.dart';
 
 class PremiumDashboardScreen extends ConsumerWidget {
   const PremiumDashboardScreen({super.key});
@@ -12,11 +12,11 @@ class PremiumDashboardScreen extends ConsumerWidget {
     final transactions = ref.watch(transactionProvider);
 
     final income = transactions
-        .where((t) => t.type == TransactionType.income)
+        .where((t) => !t.isExpense)
         .fold(0.0, (sum, t) => sum + t.amount);
 
     final expense = transactions
-        .where((t) => t.type == TransactionType.expense)
+        .where((t) => t.isExpense)
         .fold(0.0, (sum, t) => sum + t.amount);
 
     final balance = income - expense;
@@ -125,7 +125,7 @@ class TransactionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isExpense = transaction.type == TransactionType.expense;
+    final isExpense = transaction.isExpense;
 
     return FintechCard(
       height: 80,

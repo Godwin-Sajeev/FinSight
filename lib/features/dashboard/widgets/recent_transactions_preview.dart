@@ -5,7 +5,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../models/transaction_model.dart';
+import '../../../core/models/transaction_model.dart';
 import '../../../core/widgets/luxury_glass_card.dart';
 import '../../../providers/finance_provider.dart';
 
@@ -62,7 +62,7 @@ class RecentTransactionsPreview extends ConsumerWidget {
             separatorBuilder: (context, index) => const Divider(color: AppColors.divider, height: 24),
             itemBuilder: (context, index) {
               final tx = transactions[index];
-              final isExpense = tx.type == TransactionType.expense;
+              final isExpense = tx.isExpense;
               return Row(
                 children: [
                   Container(

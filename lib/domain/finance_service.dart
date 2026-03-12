@@ -2,21 +2,21 @@
 // This is the financial brain of the application
 // All calculations happen here
 
-import '../models/transaction_model.dart';
+import '../core/models/transaction_model.dart';
 
 class FinanceService {
 
   // calculate total income
   double totalIncome(List<TransactionModel> transactions) {
     return transactions
-        .where((t) => t.type == TransactionType.income)
+        .where((t) => !t.isExpense)
         .fold(0, (sum, t) => sum + t.amount);
   }
 
   // calculate total expense
   double totalExpense(List<TransactionModel> transactions) {
     return transactions
-        .where((t) => t.type == TransactionType.expense)
+        .where((t) => t.isExpense)
         .fold(0, (sum, t) => sum + t.amount);
   }
 
@@ -32,7 +32,7 @@ class FinanceService {
     final Map<String, double> data = {};
 
     for (var t in transactions) {
-      if (t.type == TransactionType.expense) {
+      if (t.isExpense) {
         data[t.category] =
             (data[t.category] ?? 0) + t.amount;
       }

@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/app_spacing.dart';
-import '../../../../models/transaction_model.dart';
+import '../../../../core/models/transaction_model.dart';
 import '../../../../providers/finance_provider.dart';
 
 class InsightCards extends ConsumerWidget {
@@ -14,7 +14,7 @@ class InsightCards extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final transactions = ref.watch(transactionProvider);
-    final expenses = transactions.where((tx) => tx.type == TransactionType.expense).toList();
+    final expenses = transactions.where((tx) => tx.isExpense).toList();
     
     // Insights Logic
     double currentMonthSpend = 0;

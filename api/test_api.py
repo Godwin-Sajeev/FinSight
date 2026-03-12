@@ -18,7 +18,7 @@ except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "requests", "-q"])
     import requests
 
-BASE = "http://localhost:8000"
+BASE = "http://localhost:8001"
 PASS = 0
 FAIL = 0
 

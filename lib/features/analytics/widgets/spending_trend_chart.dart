@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/app_spacing.dart';
-import '../../../../models/transaction_model.dart';
+import '../../../../core/models/transaction_model.dart';
 import '../../../../providers/finance_provider.dart';
 
 class SpendingTrendChart extends ConsumerWidget {
@@ -14,7 +14,7 @@ class SpendingTrendChart extends ConsumerWidget {
 
   List<FlSpot> _getSpots(List<TransactionModel> transactions) {
     // Only count expenses
-    final expenses = transactions.where((tx) => tx.type == TransactionType.expense).toList();
+    final expenses = transactions.where((tx) => tx.isExpense).toList();
     final now = DateTime.now();
 
     List<double> values;

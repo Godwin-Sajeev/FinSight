@@ -1,0 +1,21 @@
+services:
+  # Backend and ML Service
+  - type: web
+    name: finsight-backend
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn api.server:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.0
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+
+  # Frontend (Flutter Web)
+  - type: web
+    name: finsight-frontend
+    runtime: static
+    buildCommand: flutter build web --release
+    publishPath: build/web

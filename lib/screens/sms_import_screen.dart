@@ -8,7 +8,7 @@ import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/services/ml_service.dart';
 import '../../providers/finance_provider.dart';
-import '../../models/transaction_model.dart';
+import '../../core/models/transaction_model.dart';
 import 'package:flutter_sms_inbox/flutter_sms_inbox.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -92,12 +92,12 @@ class _SmsImportScreenState extends ConsumerState<SmsImportScreen> {
           final category = _guessCategory(nlp.merchant ?? '');
 
           final tx = TransactionModel(
-            id: const Uuid().v4(),
             title: nlp.merchant?.isNotEmpty == true ? nlp.merchant! : 'SMS Sync',
+            merchantName: nlp.merchant?.isNotEmpty == true ? nlp.merchant! : 'Unknown',
             amount: nlp.amount!,
             date: msg.date ?? DateTime.now(),
             category: category,
-            type: nlp.type == 'credit' ? TransactionType.income : TransactionType.expense,
+            isExpense: nlp.type != 'credit',
           );
 
           ref.read(transactionProvider.notifier).addTransaction(tx);
@@ -186,12 +186,12 @@ class _SmsImportScreenState extends ConsumerState<SmsImportScreen> {
 
     // Auto-save transaction
     final tx = TransactionModel(
-      id: const Uuid().v4(),
       title: nlp.merchant?.isNotEmpty == true ? nlp.merchant! : 'UPI Transaction',
+      merchantName: nlp.merchant?.isNotEmpty == true ? nlp.merchant! : 'Unknown',
       amount: nlp.amount!,
       date: DateTime.now(),
       category: category,
-      type: nlp.type == 'credit' ? TransactionType.income : TransactionType.expense,
+      isExpense: nlp.type != 'credit',
     );
 
     ref.read(transactionProvider.notifier).addTransaction(tx);
@@ -205,7 +205,7 @@ class _SmsImportScreenState extends ConsumerState<SmsImportScreen> {
       smsSnippet: _snippet(sms),
       status: _ImportStatus.saved,
       message:
-          '✅ Saved: ${tx.type == TransactionType.expense ? "−" : "+"}₹${tx.amount.toStringAsFixed(0)} · ${tx.title} · ${tx.category}$mlMsg',
+          '✅ Saved: ${tx.isExpense ? "−" : "+"}₹${tx.amount.toStringAsFixed(0)} · ${tx.title} · ${tx.category}$mlMsg',
       transaction: tx,
     ));
 

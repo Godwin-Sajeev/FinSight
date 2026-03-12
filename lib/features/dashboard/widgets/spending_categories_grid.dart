@@ -5,7 +5,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../models/transaction_model.dart';
+import '../../../core/models/transaction_model.dart';
 import '../../../core/widgets/luxury_glass_card.dart';
 import '../../../providers/finance_provider.dart';
 
@@ -22,7 +22,7 @@ class SpendingCategoriesGrid extends ConsumerWidget {
     double totalExpense = 0;
     
     for (var tx in allTransactions) {
-      if (tx.type == TransactionType.expense) {
+      if (tx.isExpense) {
         expenseMap[tx.category] = (expenseMap[tx.category] ?? 0) + tx.amount;
         totalExpense += tx.amount;
       }

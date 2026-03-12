@@ -9,11 +9,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/transaction_model.dart';
+// import '../models/transaction_model.dart';
 
 class MLService {
   // Real device: Use your PC's LAN IP
-  static const String _baseUrl = 'http://172.26.2.91:8001';
+  static const String _baseUrl = 'http://192.168.23.29:8001';
 
   // ── Authentication ─────────────────────────────────────────────────────────
 

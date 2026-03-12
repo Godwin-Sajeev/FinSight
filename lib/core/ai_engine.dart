@@ -1,6 +1,34 @@
-import '../models/transaction_model.dart';
+import '../core/models/transaction_model.dart';
 
 class AIEngine {
+
+  // ==============================
+  // TOTAL INCOME
+  // ==============================
+  static double totalIncome(List<TransactionModel> transactions) {
+    return transactions
+        .where((tx) => !tx.isExpense)
+        .fold(0.0, (sum, tx) => sum + tx.amount);
+  }
+
+  // ==============================
+  // TOTAL EXPENSE
+  // ==============================
+  static double totalExpense(List<TransactionModel> transactions) {
+    return transactions
+        .where((tx) => tx.isExpense)
+        .fold(0.0, (sum, tx) => sum + tx.amount);
+  }
+
+  // ==============================
+  // HIGHEST SPENDING CATEGORY
+  // ==============================
+  static String highestSpendingCategory(List<TransactionModel> transactions) {
+    final breakdown = categoryBreakdown(transactions);
+    if (breakdown.isEmpty) return 'No data yet';
+    final highest = breakdown.entries.reduce((a, b) => a.value > b.value ? a : b);
+    return '${highest.key} (₹${highest.value.toStringAsFixed(0)})';
+  }
 
   // ==============================
   // CATEGORY BREAKDOWN (For Donut)
@@ -11,7 +39,7 @@ class AIEngine {
     final Map<String, double> data = {};
 
     for (var tx in transactions) {
-      if (tx.type == TransactionType.expense) {
+      if (tx.isExpense) {
         data[tx.category] =
             (data[tx.category] ?? 0) + tx.amount;
       }
@@ -34,7 +62,7 @@ class AIEngine {
     double previous = 0;
 
     for (var tx in transactions) {
-      if (tx.type == TransactionType.expense) {
+      if (tx.isExpense) {
         if (tx.date.month == currentMonth) {
           current += tx.amount;
         } else if (tx.date.month == previousMonth) {

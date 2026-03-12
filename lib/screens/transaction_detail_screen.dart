@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 
 // Import model
-import '../models/transaction_model.dart';
+import '../core/models/transaction_model.dart';
 
 class TransactionDetailScreen extends StatelessWidget {
 

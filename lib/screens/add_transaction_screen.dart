@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/finance_provider.dart';
-import '../models/transaction_model.dart';
+import '../core/models/transaction_model.dart';
 import '../core/services/ml_service.dart';
 import 'package:uuid/uuid.dart';
 
@@ -21,7 +21,7 @@ class _AddTransactionScreenState
   final TextEditingController _smsController      = TextEditingController();
   final TextEditingController _senderIdController = TextEditingController();
 
-  TransactionType _selectedType = TransactionType.expense;
+  bool            _isExpense    = true;
   DateTime        _selectedDate = DateTime.now();
   String          _category     = 'General';
   bool            _isSaving     = false;
@@ -74,9 +74,9 @@ class _AddTransactionScreenState
         _titleController.text = nlp.merchant!;
       }
       if (nlp.type == 'credit') {
-        setState(() => _selectedType = TransactionType.income);
+        setState(() => _isExpense = false);
       } else {
-        setState(() => _selectedType = TransactionType.expense);
+        setState(() => _isExpense = true);
       }
     }
 
@@ -96,12 +96,13 @@ class _AddTransactionScreenState
     if (!_formKey.currentState!.validate()) return;
 
     final tx = TransactionModel(
-      id:       const Uuid().v4(),
-      title:    _titleController.text.trim(),
-      amount:   double.parse(_amountController.text),
-      date:     _selectedDate,
-      category: _category,
-      type:     _selectedType,
+      title:        _titleController.text.trim(),
+      merchantName: _titleController.text.trim(),
+      amount:       double.parse(_amountController.text),
+      date:         _selectedDate,
+      category:     _category,
+      isExpense:    _isExpense,
+      aiComment:    _mlComment,
     );
 
     ref.read(transactionProvider.notifier).addTransaction(tx);
@@ -196,19 +197,19 @@ class _AddTransactionScreenState
               ),
               const SizedBox(height: 16),
 
-              DropdownButtonFormField<TransactionType>(
-                value: _selectedType,
+              DropdownButtonFormField<bool>(
+                value: _isExpense,
                 decoration: const InputDecoration(
                   labelText:  'Type',
                   prefixIcon: Icon(Icons.swap_vert),
                 ),
                 items: const [
                   DropdownMenuItem(
-                      value: TransactionType.expense, child: Text('Expense')),
+                      value: true, child: Text('Expense')),
                   DropdownMenuItem(
-                      value: TransactionType.income, child: Text('Income')),
+                      value: false, child: Text('Income')),
                 ],
-                onChanged: (v) => setState(() => _selectedType = v!),
+                onChanged: (v) => setState(() => _isExpense = v!),
               ),
               const SizedBox(height: 16),
 
