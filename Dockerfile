@@ -19,7 +19,14 @@ COPY . .
 
 # Set environment variables
 ENV PYTHONPATH=/app
-ENV PORT=8000
+ENV PORT=7860
+ENV HOME=/home/user
+
+# Create a user to avoid running as root (Hugging Face best practice)
+RUN useradd -m -u 1000 user
+USER user
+WORKDIR $HOME/app
+COPY --chown=user . $HOME/app
 
 # Run the server
 CMD uvicorn api.server:app --host 0.0.0.0 --port $PORT
