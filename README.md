@@ -297,6 +297,16 @@ Charts update automatically as new transactions are captured, giving users a liv
 
 ![Settings](screenshots/11_settings.png)
 
+## Live Application Preview
+
+| Dashboard | SMS Import (V2) | Add Transaction |
+|---|---|---|
+| ![Dashboard](screenshots/live_dashboard.jpeg) | ![SMS Import](screenshots/live_sms_import.jpeg) | ![Add Transaction](screenshots/live_add_transaction.jpeg) |
+
+- **Real-time Dashboard**: A comprehensive overview of your financial status, including total balance, income, and categorized expenses.
+- **Smart SMS Import (V2)**: Automatically extract transaction details from your bank's SMS notifications for seamless tracking.
+- **AI-Powered Transaction Entry**: Manually add transactions or use AI-powered SMS detection to quickly record your spending.
+
 ---
 
 ## Key Features
