@@ -36,12 +36,12 @@ class TestUPIAgent(unittest.TestCase):
         self.assertEqual(result['merchant'], 'Uber')
 
     def test_ippb_format(self):
-        text = 'A/C X4952 Debit Rs.100.00 for UPI to abhinav  ravi on 12-01-26 Ref 601202411884. Avl Bal Rs.669.76. If not you? SMS FREEZE "full a/c" to 7669034700-IPPB'
+        text = 'A/C X4952 Debit Rs.100.00 for UPI to Generic User on 12-01-26 Ref 601202411884. Avl Bal Rs.669.76. If not you? SMS FREEZE "full a/c" to 7669034700-IPPB'
         result = self.agent.process_message(text)
         self.assertIsNotNone(result)
         self.assertEqual(result['amount'], 100.0)
         self.assertEqual(result['type'], 'debit')
-        self.assertEqual(result['merchant'], 'abhinav ravi')
+        self.assertEqual(result['merchant'], 'Generic User')
 
     def test_mixed_debounce_credit(self):
         # Case where both 'debited' and 'credited' appear
@@ -63,7 +63,7 @@ class TestUPIAgent(unittest.TestCase):
 
     def test_valid_sender_ippb(self):
         """IPPB sender JD-IPBMSG-S should be recognized."""
-        text = "A/C X4952 Debit Rs.100.00 for UPI to abhinav ravi on 12-01-26 Ref 601202411884-IPPB"
+        text = "A/C X4952 Debit Rs.100.00 for UPI to Generic User on 12-01-26 Ref 601202411884-IPPB"
         result = self.agent.process_message(text, sender_id="JD-IPBMSG-S")
         self.assertIsNotNone(result)
         self.assertEqual(result['bank_name'], 'IPPB')
