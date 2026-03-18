@@ -6,7 +6,14 @@ import '../core/services/ml_service.dart';
 import 'package:uuid/uuid.dart';
 
 class AddTransactionScreen extends ConsumerStatefulWidget {
-  const AddTransactionScreen({super.key});
+  final String? initialTitle;
+  final double? initialAmount;
+  
+  const AddTransactionScreen({
+    super.key, 
+    this.initialTitle, 
+    this.initialAmount,
+  });
 
   @override
   ConsumerState<AddTransactionScreen> createState() =>
@@ -27,6 +34,17 @@ class _AddTransactionScreenState
   bool            _isSaving     = false;
   String?         _mlComment;
   String?         _mlAlertLevel;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialTitle != null) {
+      _titleController.text = widget.initialTitle!;
+    }
+    if (widget.initialAmount != null && widget.initialAmount! > 0) {
+      _amountController.text = widget.initialAmount!.toStringAsFixed(2);
+    }
+  }
 
   // ── Categories ─────────────────────────────────────────────────────────────
   final List<String> _categories = [

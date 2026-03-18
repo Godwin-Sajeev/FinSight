@@ -121,7 +121,7 @@ class AppTheme {
   static List<BoxShadow> get cardShadow {
     return [
       BoxShadow(
-        color: AppColors.primaryAccent.withValues(alpha: 0.08),
+        color: AppColors.primaryAccent.withOpacity(0.08),
         blurRadius: 40,
         offset: const Offset(0, 15),
       ),

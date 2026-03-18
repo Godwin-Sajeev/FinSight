@@ -5,6 +5,7 @@ import 'widgets/dashboard_header.dart';
 import 'widgets/balance_hero_card.dart';
 import 'widgets/spending_categories_grid.dart';
 import 'widgets/recent_transactions_preview.dart';
+import 'widgets/upcoming_bills_widget.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -22,6 +23,8 @@ class DashboardScreen extends StatelessWidget {
             BalanceHeroCard(),
             Gap(AppSpacing.sectionSpacing),
             SpendingCategoriesGrid(),
+            Gap(AppSpacing.sectionSpacing),
+            UpcomingBillsWidget(),
             Gap(AppSpacing.sectionSpacing),
             RecentTransactionsPreview(),
             Gap(80), // To prevent FAB overlap

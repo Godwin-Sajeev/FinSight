@@ -1,32 +1,86 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:gap/gap.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/services/ml_service.dart';
+import '../../../../providers/user_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'notifications_sheet.dart';
 
-class DashboardHeader extends StatelessWidget {
+class DashboardHeader extends ConsumerStatefulWidget {
   const DashboardHeader({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final hour = DateTime.now().hour;
-    final greeting = hour < 12
-        ? 'Good Morning,'
-        : hour < 17
-            ? 'Good Afternoon,'
-            : 'Good Evening,';
+  ConsumerState<DashboardHeader> createState() => _DashboardHeaderState();
+}
 
+class _DashboardHeaderState extends ConsumerState<DashboardHeader> {
+  String _greeting = 'Welcome back,';
+  bool _showingWelcome = true;
+  Timer? _welcomeTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startWelcomeTimer();
+  }
+
+  void _startWelcomeTimer() {
+    _welcomeTimer = Timer(const Duration(seconds: 10), () {
+      if (mounted) {
+        setState(() {
+          _showingWelcome = false;
+          _updateGreeting();
+        });
+      }
+    });
+  }
+
+  void _updateGreeting() {
+    final hour = DateTime.now().hour;
+    setState(() {
+      _greeting = hour < 12
+          ? 'Good Morning,'
+          : hour < 17
+              ? 'Good Afternoon,'
+              : 'Good Evening,';
+    });
+  }
+
+  @override
+  void dispose() {
+    _welcomeTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final userProfile = ref.watch(userProvider);
+    
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(greeting, style: AppTypography.textTheme.bodyMedium),
+            Text(
+              _greeting, 
+              style: AppTypography.textTheme.bodyMedium?.copyWith(
+                color: theme.textTheme.bodyMedium?.color,
+              ),
+            ),
             const Gap(4),
-            Text('Alex', style: AppTypography.textTheme.titleLarge),
+            Text(
+              userProfile.userName, 
+              style: AppTypography.textTheme.titleLarge?.copyWith(
+                color: theme.textTheme.titleLarge?.color,
+              ),
+            ),
           ],
         ),
         Row(
@@ -47,14 +101,14 @@ class DashboardHeader extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: AppColors.cardBackground,
+                      color: theme.cardTheme.color,
                       shape: BoxShape.circle,
-                      boxShadow: AppTheme.cardShadow,
+                      boxShadow: theme.brightness == Brightness.light ? AppTheme.cardShadow : null,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       LucideIcons.bell,
                       size: 20,
-                      color: AppColors.textPrimary,
+                      color: theme.iconTheme.color,
                     ),
                   ),
                   // Red dot badge
@@ -67,7 +121,7 @@ class DashboardHeader extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: AppColors.danger,
                         shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.background, width: 1.5),
+                        border: Border.all(color: theme.scaffoldBackgroundColor, width: 1.5),
                       ),
                     ),
                   ),
@@ -77,14 +131,17 @@ class DashboardHeader extends StatelessWidget {
             const Gap(12),
             CircleAvatar(
               radius: 20,
-              backgroundColor: AppColors.primaryAccent.withValues(alpha: 0.2),
-              child: const Text(
-                'A',
-                style: TextStyle(
-                  color: AppColors.primaryAccent,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              backgroundColor: AppColors.primaryAccent.withOpacity(0.2),
+              backgroundImage: userProfile.profilePicPath != null ? FileImage(File(userProfile.profilePicPath!)) : null,
+              child: userProfile.profilePicPath == null 
+                ? Text(
+                    userProfile.userName.isNotEmpty ? userProfile.userName[0].toUpperCase() : 'A',
+                    style: const TextStyle(
+                      color: AppColors.primaryAccent,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  )
+                : null,
             ),
           ],
         )

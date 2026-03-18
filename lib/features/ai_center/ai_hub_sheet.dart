@@ -101,7 +101,7 @@ class _AIHubSheetState extends State<AIHubSheet>
                 margin: const EdgeInsets.symmetric(horizontal: 20),
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: AppColors.divider.withValues(alpha: 0.5),
+                  color: AppColors.divider.withOpacity(0.5),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: TabBar(
@@ -213,9 +213,9 @@ class _InsightsTabState extends ConsumerState<_InsightsTab> {
             padding: const EdgeInsets.all(12),
             margin: const EdgeInsets.only(bottom: 14),
             decoration: BoxDecoration(
-              color: AppColors.danger.withValues(alpha: 0.1),
+              color: AppColors.danger.withOpacity(0.1),
               borderRadius: BorderRadius.circular(AppSpacing.radius),
-              border: Border.all(color: AppColors.danger.withValues(alpha: 0.3)),
+              border: Border.all(color: AppColors.danger.withOpacity(0.3)),
             ),
             child: Row(
               children: [
@@ -375,7 +375,7 @@ class _InsightsTabState extends ConsumerState<_InsightsTab> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
+              color: color.withOpacity(0.1),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(icon, color: color, size: 22),
@@ -475,10 +475,10 @@ class _ChatTab extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.primaryAccent.withValues(alpha: 0.08),
+        color: AppColors.primaryAccent.withOpacity(0.08),
         borderRadius: BorderRadius.circular(20),
         border:
-            Border.all(color: AppColors.primaryAccent.withValues(alpha: 0.2)),
+            Border.all(color: AppColors.primaryAccent.withOpacity(0.2)),
       ),
       child: Text(
         text,
@@ -559,7 +559,7 @@ class _ActionsTab extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: a.color.withValues(alpha: 0.1),
+                    color: a.color.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Icon(a.icon, color: a.color, size: 22),

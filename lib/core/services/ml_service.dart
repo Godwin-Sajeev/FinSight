@@ -12,8 +12,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 // import '../models/transaction_model.dart';
 
 class MLService {
-  // Real device: Use your PC's LAN IP
-  static const String _baseUrl = 'http://192.168.23.29:8001';
+  // Live Backend: Hugging Face Spaces (No card needed, 16GB RAM)
+  // static const String _baseUrl = 'https://godwinsajeev-finsight-backend.hf.space';
+  static const String _baseUrl = 'http://127.0.0.1:8001';
+  // 127.0.0.1 used in combination with `adb reverse tcp:8001 tcp:8001` to bypass Windows Firewall.
 
   // ── Authentication ─────────────────────────────────────────────────────────
 
@@ -25,7 +27,7 @@ class MLService {
         Uri.parse('$_baseUrl/auth/send-otp'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email}),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 60)); // Increased for cold starts
 
       print('[MLService] Response status: ${res.statusCode}');
       print('[MLService] Response body: ${res.body}');
@@ -81,21 +83,55 @@ class MLService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('auth_token');
     await prefs.remove('user_email');
+    await prefs.remove('user_name');
+  }
+
+  /// Saves the user's name to SharedPreferences.
+  static Future<void> setUserName(String name) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_name', name);
+  }
+
+  /// Retrieves the user's name from SharedPreferences.
+  static Future<String?> getUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('user_name');
+  }
+
+  /// Retrieves the user's email from SharedPreferences.
+  static Future<String?> getUserEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('user_email');
+  }
+
+  /// Saves the user's profile picture path.
+  static Future<void> setProfilePic(String path) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('profile_pic', path);
+  }
+
+  /// Retrieves the user's profile picture path.
+  static Future<String?> getProfilePic() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('profile_pic');
   }
 
   // ── Health check ───────────────────────────────────────────────────────────
   /// Returns true if the Python server is running and ML model is trained.
   static Future<bool> isServerAlive() async {
     try {
+      print('[MLService] Checking health at $_baseUrl/health');
       final res = await http
           .get(Uri.parse('$_baseUrl/health'))
           .timeout(const Duration(seconds: 3));
+      print('[MLService] Health status: ${res.statusCode}');
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
-        return data['status'] == 'ok' && data['ml_trained'] == true;
+        return data['status'] == 'ok' && (data['ml_trained'] == true || data['ml_ready'] == true);
       }
       return false;
-    } catch (_) {
+    } catch (e) {
+      print('[MLService] isServerAlive error: $e');
       return false;
     }
   }
@@ -110,6 +146,7 @@ class MLService {
     String? senderId,
   }) async {
     try {
+      print('[MLService] Analyzing SMS via $_baseUrl/analyze-sms');
       final res = await http
           .post(
             Uri.parse('$_baseUrl/analyze-sms'),
@@ -121,11 +158,14 @@ class MLService {
           )
           .timeout(const Duration(seconds: 10));
 
+      print('[MLService] Analysis response: ${res.statusCode}');
       if (res.statusCode == 200) {
         return MLAnalysisResult.fromJson(jsonDecode(res.body));
       }
+      print('[MLService] Analysis failed with body: ${res.body}');
       return null;
-    } catch (_) {
+    } catch (e) {
+      print('[MLService] analyzeSms error: $e');
       return null;
     }
   }

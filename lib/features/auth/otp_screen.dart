@@ -8,6 +8,7 @@ import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/services/ml_service.dart';
 import '../navigation/main_nav_screen.dart';
+import 'name_screen.dart';
 
 class OtpScreen extends StatefulWidget {
   final String email;
@@ -74,10 +75,18 @@ class _OtpScreenState extends State<OtpScreen> {
 
     if (result['success'] == true) {
       if (mounted) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const MainNavScreen()),
-          (route) => false,
-        );
+        final name = await MLService.getUserName();
+        if (name == null || name.isEmpty) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const NameScreen()),
+            (route) => false,
+          );
+        } else {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const MainNavScreen()),
+            (route) => false,
+          );
+        }
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

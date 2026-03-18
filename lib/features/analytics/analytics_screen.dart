@@ -7,15 +7,19 @@ import 'widgets/spending_trend_chart.dart';
 import 'widgets/category_donut_chart.dart';
 import 'widgets/insight_cards.dart';
 import '../ai_center/widgets/ai_chat_interface.dart';
+import '../../core/services/report_service.dart';
+import '../../providers/finance_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
-class AnalyticsScreen extends StatefulWidget {
+class AnalyticsScreen extends ConsumerStatefulWidget {
   const AnalyticsScreen({super.key});
 
   @override
-  State<AnalyticsScreen> createState() => _AnalyticsScreenState();
+  ConsumerState<AnalyticsScreen> createState() => _AnalyticsScreenState();
 }
 
-class _AnalyticsScreenState extends State<AnalyticsScreen> {
+class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen> {
   int _selectedFilterIndex = 1; // 0=Daily, 1=Monthly, 2=Yearly
 
   @override
@@ -23,6 +27,24 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Analytics'),
+        actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(LucideIcons.download),
+            onSelected: (value) async {
+              final transactions = ref.read(transactionProvider);
+              if (value == 'pdf') {
+                await ReportService.generatePdfReport(transactions);
+              } else if (value == 'csv') {
+                await ReportService.generateCsvReport(transactions);
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: 'pdf', child: Text('Export as PDF')),
+              const PopupMenuItem(value: 'csv', child: Text('Export as CSV')),
+            ],
+          ),
+          const Gap(16),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),

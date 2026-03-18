@@ -4,15 +4,14 @@ from typing import Dict, Any, Optional
 
 class EntityExtractor:
     # Regex patterns
-    # Regex patterns
     # Handles: Rs. 100, INR 100, INR Rs. 100, Rs 100, ₹ 100, Amt: 100
     AMOUNT_PATTERN = r'(?i)(?:INR|Rs\.?|₹|Amt:?)\s*([\d,]+(?:\.\d{1,2})?)'
     
-    # Common date formats: 14/01/2026, 14-01-26, 14 Jan 2026
-    DATE_PATTERN = r'(\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{2,4})'
+    # Common date formats: 14/01/2026, 14-01-26, 14 Jan 2026, 14Jan26, 17-Mar-26
+    DATE_PATTERN = r'(\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|\d{1,2}\s*[A-Za-z]{3}\s*\d{2,4}|\d{1,2}-[A-Za-z]{3}-\d{2,4})'
     
-    # Time formats: 8:43 PM, 20:43
-    TIME_PATTERN = r'(\d{1,2}:\d{2}(?:\s?[AP]M)?)'
+    # Time formats: 8:43 PM, 20:43, 12:45:00
+    TIME_PATTERN = r'(\d{1,2}:\d{2}(?::\d{2})?(?:\s?[APa-p][Mm])?)'
 
     @staticmethod
     def extract(text: str) -> Dict[str, Any]:
@@ -71,23 +70,24 @@ class EntityExtractor:
         # 5. Determine Merchant
         merchant_match = None
         
-        # Pattern A: "paid to X", "sent to X"
+        # Pattern A: "paid to X", "sent to X", "trf to X", "debited... to X"
         if entities['type'] == 'debit':
-            match = re.search(r'(?i)\b(?:to|paid to|sent to)\s+([^,.]+?)(?:\s+(?:on|at|via|using|ref|fees|failed|due)|$)', text)
+            match = re.search(r'(?i)\b(?:to|paid to|sent to|trf to|vpa)\s+([A-Za-z0-9@.\-]+)(?:\s+(?:on|at|via|using|ref|fees|failed|due)|$|\.)', text)
             if match:
                 merchant_match = match.group(1)
                 
-        # Pattern B: "received from X"
+        # Pattern B: "received from X" or "deposited in X"
         elif entities['type'] == 'credit':
-            match = re.search(r'(?i)\b(?:from|received from)\s+([^,.]+?)(?:\s+(?:on|at|via|using|ref)|$)', text)
+            match = re.search(r'(?i)\b(?:from|received from|deposited in)\s+([A-Za-z0-9@.\-]+)(?:\s+(?:on|at|via|using|ref)|$|\.)', text)
             if match:
                 merchant_match = match.group(1)
 
-        # Pattern C: Info:UPI/REF/MERCHANT (Specific to South Indian Bank & others)
+        # Pattern C: Info:UPI/REF/MERCHANT or UPI-MERCHANT-UPI (Specific to Indian Banks)
         if not merchant_match:
-            match = re.search(r'(?i)info:upi/[^/]+/[^/]+/([^/ ]+)', text)
-            if match:
-                merchant_match = match.group(1)
+            # Matches Info: UPI/3015/Godwin or Info: UPI-Zomato-UPI
+            info_match = re.search(r'(?i)(?:info[:\s]*|ref[:\s]*|upi\s+ref[:\s]*)(?:upi[/\-]\d*[/\-]?([^/\-\s.]+)|([^/\-\s.]+)[/\-]upi)', text)
+            if info_match:
+                merchant_match = info_match.group(1) or info_match.group(2)
 
         if merchant_match:
             entities['merchant'] = re.sub(r'\s+', ' ', merchant_match).strip()

@@ -5,43 +5,36 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/services/ml_service.dart';
-import 'otp_screen.dart';
+import '../navigation/main_nav_screen.dart';
 
-class EmailScreen extends StatefulWidget {
-  const EmailScreen({super.key});
+class NameScreen extends StatefulWidget {
+  const NameScreen({super.key});
 
   @override
-  State<EmailScreen> createState() => _EmailScreenState();
+  State<NameScreen> createState() => _NameScreenState();
 }
 
-class _EmailScreenState extends State<EmailScreen> {
-  final TextEditingController _emailController = TextEditingController();
+class _NameScreenState extends State<NameScreen> {
+  final TextEditingController _nameController = TextEditingController();
   bool _isLoading = false;
 
-  Future<void> _handleSendOtp() async {
-    final email = _emailController.text.trim();
-    if (email.isEmpty || !email.contains('@')) {
+  Future<void> _handleSaveName() async {
+    final name = _nameController.text.trim();
+    if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid email address')),
+        const SnackBar(content: Text('Please enter your name')),
       );
       return;
     }
 
     setState(() => _isLoading = true);
-    final result = await MLService.sendOtp(email);
+    await MLService.setUserName(name);
     setState(() => _isLoading = false);
 
-    if (result['success'] == true) {
-      if (mounted) {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => OtpScreen(email: email),
-          ),
-        );
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result['message'] ?? 'Failed to send OTP')),
+    if (mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const MainNavScreen()),
+        (route) => false,
       );
     }
   }
@@ -77,19 +70,19 @@ class _EmailScreenState extends State<EmailScreen> {
                           )
                         ],
                       ),
-                      child: const Icon(LucideIcons.mail, size: 56, color: Colors.white),
+                      child: const Icon(LucideIcons.user, size: 56, color: Colors.white),
                     ),
                     const Gap(24),
-                    Text('Welcome back', style: AppTypography.textTheme.displayMedium),
+                    Text('How should we call you?', style: AppTypography.textTheme.displaySmall),
                     const Gap(8),
-                    Text('Enter your email to receive an OTP', style: AppTypography.textTheme.bodyMedium),
+                    Text('Personalize your finance experience', style: AppTypography.textTheme.bodyMedium),
                   ],
                 ),
               ),
 
               const Gap(48),
               
-              Text('Email Address', style: AppTypography.textTheme.titleLarge?.copyWith(fontSize: 16)),
+              Text('Your Name', style: AppTypography.textTheme.titleLarge?.copyWith(fontSize: 16)),
               const Gap(12),
               _buildInput(),
 
@@ -99,7 +92,7 @@ class _EmailScreenState extends State<EmailScreen> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : _handleSendOtp,
+                  onPressed: _isLoading ? null : _handleSaveName,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryAccent,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radius)),
@@ -107,7 +100,7 @@ class _EmailScreenState extends State<EmailScreen> {
                   ),
                   child: _isLoading 
                     ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const Text('Send OTP', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                    : const Text('Continue', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                 ),
               ),
             ],
@@ -125,12 +118,12 @@ class _EmailScreenState extends State<EmailScreen> {
         border: Border.all(color: AppColors.primaryAccent.withOpacity(0.15)),
       ),
       child: TextField(
-        controller: _emailController,
-        keyboardType: TextInputType.emailAddress,
+        controller: _nameController,
         style: AppTypography.textTheme.bodyLarge,
+        textCapitalization: TextCapitalization.words,
         decoration: const InputDecoration(
-          hintText: 'e.g. user@gmail.com',
-          prefixIcon: Icon(LucideIcons.atSign, color: AppColors.textSecondary),
+          hintText: 'e.g. Alex',
+          prefixIcon: Icon(LucideIcons.user, color: AppColors.textSecondary),
           border: InputBorder.none,
           contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 18),
         ),

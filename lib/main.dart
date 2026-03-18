@@ -6,7 +6,7 @@ import 'core/providers/theme_provider.dart';
 import 'core/models/transaction_model.dart';
 import 'core/models/ai_insight_model.dart';
 import 'features/auth/email_screen.dart';
-import 'features/navigation/main_nav_screen.dart';
+import 'features/navigation/startup_screen.dart';
 import 'core/services/ml_service.dart';
 
 void main() async {
@@ -15,8 +15,7 @@ void main() async {
   Hive.registerAdapter(TransactionModelAdapter());
   Hive.registerAdapter(AIInsightModelAdapter());
   
-  final loggedIn = await MLService.isLoggedIn();
-  runApp(ProviderScope(child: FinSightApp(initialScreen: loggedIn ? const MainNavScreen() : const EmailScreen())));
+  runApp(const ProviderScope(child: FinSightApp(initialScreen: StartupScreen())));
 }
 
 class FinSightApp extends ConsumerWidget {
