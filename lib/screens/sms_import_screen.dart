@@ -154,7 +154,7 @@ class _SmsImportScreenState extends ConsumerState<SmsImportScreen> {
       _addResult(_ImportResult(
         smsSnippet: _snippet(sms),
         status: _ImportStatus.serverError,
-        message: 'ML server not reachable. Make sure the Python backend is running.',
+        message: 'ML server not reachable. Check connection to local backend.',
       ));
       return;
     }
@@ -234,7 +234,7 @@ class _SmsImportScreenState extends ConsumerState<SmsImportScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Import from SMS'),
+        title: const Text('Import from SMS (V2)'),
         actions: [
           if (_results.isNotEmpty)
             TextButton(

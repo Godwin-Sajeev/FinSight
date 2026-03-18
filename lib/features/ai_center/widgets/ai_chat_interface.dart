@@ -6,37 +6,58 @@ import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_theme.dart';
 
-class AIChatInterface extends StatefulWidget {
+import '../../../core/services/ml_service.dart';
+import '../../../core/services/app_ai_service.dart';
+import '../../../providers/finance_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:permission_handler/permission_handler.dart';
+
+class AIChatInterface extends ConsumerStatefulWidget {
   const AIChatInterface({super.key});
 
   @override
-  State<AIChatInterface> createState() => _AIChatInterfaceState();
+  ConsumerState<AIChatInterface> createState() => _AIChatInterfaceState();
 }
 
-class _AIChatInterfaceState extends State<AIChatInterface> {
+class _AIChatInterfaceState extends ConsumerState<AIChatInterface> {
   final TextEditingController _controller = TextEditingController();
-  final List<Message> _messages = [
-    Message(
-      text: "Hello Alex! I analyzed your recent transactions. You're doing great, but I noticed a spike in food delivery.",
-      isUser: false,
-    ),
-  ];
+  final List<Message> _messages = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInitialMessage();
+  }
+
+  void _loadInitialMessage() async {
+    final name = await MLService.getUserName() ?? 'Alex';
+    setState(() {
+      _messages.add(Message(
+        text: "Hello $name! I analyzed your recent transactions. You're doing great, but I noticed a spike in food delivery.",
+        isUser: false,
+      ));
+    });
+  }
 
   void _sendMessage() {
     if (_controller.text.trim().isEmpty) return;
     
+    final text = _controller.text;
     setState(() {
-      _messages.insert(0, Message(text: _controller.text, isUser: true));
+      _messages.insert(0, Message(text: text, isUser: true));
     });
     
     _controller.clear();
     
-    // Mock AI Response
-    Future.delayed(const Duration(seconds: 1), () {
+    // Process with AppAIService
+    final transactions = ref.read(transactionProvider);
+    final response = AppAIService.processQuery(text, transactions);
+
+    Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) {
         setState(() {
           _messages.insert(0, Message(
-            text: "Based on your spending, cutting down Swiggy orders by 2 times a week could save you ₹1,500/month.",
+            text: response,
             isUser: false,
           ));
         });

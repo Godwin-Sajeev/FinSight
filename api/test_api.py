@@ -34,13 +34,13 @@ def check(label, condition, info=""):
 def section(title):
     print(f"\n{'='*50}\n  {title}\n{'='*50}")
 
-# ── 1. Health check ────────────────────────────────────
+# ── 1. Health check    
 section("1. Health Check")
 r = requests.get(f"{BASE}/health", timeout=5)
 check("Server responds 200",  r.status_code == 200)
 check("ML model is trained",  r.json().get("ml_trained") == True, r.json())
 
-# ── 2. Valid SMS - SBI debit ───────────────────────────
+# ── 2. Valid SMS - SBI debit   
 section("2. Valid SBI Debit SMS")
 r = requests.post(f"{BASE}/analyze-sms", json={
     "sender_id": "VM-SBIUPI",
@@ -54,7 +54,7 @@ check("Bank = SBI",               data.get("nlp", {}).get("bank_name") == "SBI")
 check("ML result present",        data.get("ml") is not None)
 check("Alert level present",      data.get("ml", {}).get("alert_level") in ("LOW","MEDIUM","HIGH"))
 
-# ── 3. Valid IPPB SMS ──────────────────────────────────
+# ── 3. Valid IPPB SMS  
 section("3. Valid IPPB SMS (JD-IPBMSG-S)")
 r = requests.post(f"{BASE}/analyze-sms", json={
     "sender_id": "JD-IPBMSG-S",
@@ -65,7 +65,7 @@ check("Not rejected",      not data.get("rejected"))
 check("Amount = 100.0",    data.get("nlp", {}).get("amount") == 100.0)
 check("Bank = IPPB",       data.get("nlp", {}).get("bank_name") == "IPPB")
 
-# ── 4. Spam sender rejected ────────────────────────────
+# ── 4. Spam sender rejected    
 section("4. Spam/Fake Sender Rejection")
 r = requests.post(f"{BASE}/analyze-sms", json={
     "sender_id": "XX-SPAM01",
@@ -75,7 +75,7 @@ data = r.json()
 check("Rejected = True",    data.get("rejected") == True)
 check("ML = None",          data.get("ml") is None)
 
-# ── 5. OTP filtered ───────────────────────────────────
+# ── 5. OTP filtered         
 section("5. OTP Message Filtered")
 r = requests.post(f"{BASE}/analyze-sms", json={
     "sender_id": "AM-HDFCBK",
@@ -84,7 +84,7 @@ r = requests.post(f"{BASE}/analyze-sms", json={
 data = r.json()
 check("Rejected (OTP not a transaction)", data.get("rejected") == True)
 
-# ── 6. Budget summary ─────────────────────────────────
+# ── 6. Budget summary  
 section("6. Budget Summary Endpoint")
 r = requests.post(f"{BASE}/budget", json={
     "monthly_budget": 10000.0,
@@ -104,7 +104,7 @@ check("Budget alert present",      "budget_alert" in data)
 check("Alert level = WARNING",     data.get("budget_alert", {}).get("level") == "WARNING",
       data.get("budget_alert"))
 
-# ── Final report ──────────────────────────────────────
+# ── Final report   
 total = PASS + FAIL
 print(f"\n{'='*50}")
 print(f"  RESULT: {PASS}/{total} passed")

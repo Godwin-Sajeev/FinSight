@@ -1,10 +1,8 @@
-# Use official Python image
 FROM python:3.10-slim
 
-# Set working directory
 WORKDIR /app
 
-# Install system dependencies for XGBoost and general builds
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libgomp1 \
@@ -20,13 +18,11 @@ COPY . .
 # Set environment variables
 ENV PYTHONPATH=/app
 ENV PORT=7860
-ENV HOME=/home/user
 
-# Create a user to avoid running as root (Hugging Face best practice)
+# Hugging Face user setup
 RUN useradd -m -u 1000 user
+RUN chown -R user:user /app
 USER user
-WORKDIR $HOME/app
-COPY --chown=user . $HOME/app
 
-# Run the server
-CMD uvicorn api.server:app --host 0.0.0.0 --port $PORT
+# Run server
+CMD ["uvicorn", "api.server:app", "--host", "0.0.0.0", "--port", "7860", "--workers", "1"]

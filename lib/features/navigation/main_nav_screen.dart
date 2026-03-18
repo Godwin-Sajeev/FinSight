@@ -1,6 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/providers/theme_provider.dart';
+import '../../core/services/ml_service.dart';
 import '../analytics/analytics_screen.dart';
 import '../dashboard/dashboard_screen.dart';
 import '../profile/profile_screen.dart';
@@ -8,20 +13,23 @@ import '../transactions/transactions_screen.dart';
 import '../ai_center/ai_hub_sheet.dart';
 import '../../screens/sms_import_screen.dart';
 import '../../screens/add_transaction_screen.dart';
+import '../../core/services/ocr_service.dart';
 
-class MainNavScreen extends StatefulWidget {
+class MainNavScreen extends ConsumerStatefulWidget {
   const MainNavScreen({super.key});
 
   @override
-  State<MainNavScreen> createState() => _MainNavScreenState();
+  ConsumerState<MainNavScreen> createState() => _MainNavScreenState();
 }
 
-class _MainNavScreenState extends State<MainNavScreen>
+class _MainNavScreenState extends ConsumerState<MainNavScreen>
     with SingleTickerProviderStateMixin {
   int _currentIndex = 0;
   bool _fabOpen = false;
   late AnimationController _fabAnimController;
   late Animation<double> _fabScaleAnimation;
+  String? _profilePicPath;
+  String _userName = 'A';
 
   final List<Widget> _screens = const [
     DashboardScreen(),
@@ -41,6 +49,24 @@ class _MainNavScreenState extends State<MainNavScreen>
       parent: _fabAnimController,
       curve: Curves.easeOut,
     );
+    _loadUserInfo();
+  }
+
+  void _loadUserInfo() async {
+    final pic = await MLService.getProfilePic();
+    final name = await MLService.getUserName();
+    if (mounted) {
+      setState(() {
+        _profilePicPath = pic;
+        if (name != null && name.isNotEmpty) _userName = name[0].toUpperCase();
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(MainNavScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _loadUserInfo();
   }
 
   @override
@@ -67,8 +93,11 @@ class _MainNavScreenState extends State<MainNavScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = ref.watch(themeModeProvider);
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: GestureDetector(
         onTap: _closeFab,
         child: Stack(
@@ -84,7 +113,7 @@ class _MainNavScreenState extends State<MainNavScreen>
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      AppColors.primaryAccent.withValues(alpha: 0.15),
+                      AppColors.primaryAccent.withOpacity(0.15),
                       Colors.transparent,
                     ],
                   ),
@@ -101,7 +130,7 @@ class _MainNavScreenState extends State<MainNavScreen>
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      AppColors.secondaryAccent.withValues(alpha: 0.15),
+                      AppColors.secondaryAccent.withOpacity(0.15),
                       Colors.transparent,
                     ],
                   ),
@@ -121,6 +150,30 @@ class _MainNavScreenState extends State<MainNavScreen>
                 right: 0,
                 child: Column(
                   children: [
+                    ScaleTransition(
+                      scale: _fabScaleAnimation,
+                      child: _SpeedDialItem(
+                        icon: LucideIcons.camera,
+                        label: 'Scan Receipt',
+                        color: Colors.orange,
+                        onTap: () async {
+                          _closeFab();
+                          final result = await OcrService.scanReceipt();
+                          if (result != null && mounted) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => AddTransactionScreen(
+                                  initialTitle: result['merchant'],
+                                  initialAmount: result['amount'],
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 8),
                     ScaleTransition(
                       scale: _fabScaleAnimation,
                       child: _SpeedDialItem(
@@ -196,50 +249,62 @@ class _MainNavScreenState extends State<MainNavScreen>
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: Theme(
-        data: Theme.of(context).copyWith(
-          splashColor: Colors.transparent,
-          highlightColor: Colors.transparent,
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primaryAccent.withOpacity(0.05),
+              blurRadius: 30,
+              offset: const Offset(0, -10),
+            )
+          ],
         ),
-        child: Container(
-          decoration: BoxDecoration(
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primaryAccent.withValues(alpha: 0.05),
-                blurRadius: 30,
-                offset: const Offset(0, -10),
-              )
-            ],
-          ),
-          child: BottomNavigationBar(
-            currentIndex: _currentIndex,
-            backgroundColor: Colors.white.withValues(alpha: 0.9),
-            elevation: 0,
-            onTap: (index) {
-              _closeFab();
-              setState(() {
-                _currentIndex = index;
-              });
-            },
-            items: const [
-              BottomNavigationBarItem(
-                icon: Icon(LucideIcons.layoutDashboard),
-                label: 'Dashboard',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(LucideIcons.barChart2),
-                label: 'Analytics',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(LucideIcons.list),
-                label: 'History',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(LucideIcons.user),
-                label: 'Profile',
-              ),
-            ],
-          ),
+        child: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          backgroundColor: theme.cardTheme.color?.withOpacity(0.95),
+          elevation: 0,
+          onTap: (index) {
+            _closeFab();
+            setState(() {
+              _currentIndex = index;
+            });
+            if (index == 3) {
+              _loadUserInfo(); // Refresh pic when going to profile
+            }
+          },
+          items: [
+            const BottomNavigationBarItem(
+              icon: Icon(LucideIcons.layoutDashboard),
+              label: 'Dashboard',
+            ),
+            const BottomNavigationBarItem(
+              icon: Icon(LucideIcons.barChart2),
+              label: 'Analytics',
+            ),
+            const BottomNavigationBarItem(
+              icon: Icon(LucideIcons.list),
+              label: 'History',
+            ),
+            BottomNavigationBarItem(
+              icon: _profilePicPath != null
+                  ? Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        image: DecorationImage(
+                          image: FileImage(File(_profilePicPath!)),
+                          fit: BoxFit.cover,
+                        ),
+                        border: _currentIndex == 3
+                            ? Border.all(color: AppColors.primaryAccent, width: 2)
+                            : null,
+                      ),
+                    )
+                  : Icon(_currentIndex == 3 ? LucideIcons.user : LucideIcons.user),
+              label: 'Profile',
+            ),
+          ],
         ),
       ),
     );

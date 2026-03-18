@@ -127,7 +127,7 @@ class SpendingTrendChart extends ConsumerWidget {
               borderRadius: BorderRadius.circular(AppSpacing.radius),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primaryAccent.withValues(alpha: 0.08),
+                  color: AppColors.primaryAccent.withOpacity(0.08),
                   blurRadius: 30,
                   offset: const Offset(0, 10),
                 ),
@@ -199,8 +199,8 @@ class SpendingTrendChart extends ConsumerWidget {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          AppColors.primaryAccent.withValues(alpha: 0.15),
-                          AppColors.primaryAccent.withValues(alpha: 0.0),
+                          AppColors.primaryAccent.withOpacity(0.15),
+                          AppColors.primaryAccent.withOpacity(0.0),
                         ],
                       ),
                     ),
