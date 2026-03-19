@@ -41,9 +41,26 @@ class OcrService {
       merchant = lines.first; // Usually merchant name is at the top
     }
 
+    // --- Category Heuristics ---
+    String category = 'General';
+    final lower = text.toLowerCase();
+    
+    if (lower.contains('bus') || lower.contains('ticket') || lower.contains('travel') || lower.contains('train') || lower.contains('flight') || lower.contains('irctc') || lower.contains('ksrtc') || lower.contains('uber') || lower.contains('ola') || lower.contains('auto')) {
+      category = 'Travel';
+    } else if (lower.contains('hotel') || lower.contains('restaurant') || lower.contains('food') || lower.contains('cafe') || lower.contains('dining') || lower.contains('swiggy') || lower.contains('zomato') || lower.contains('kitchen')) {
+      category = 'Food';
+    } else if (lower.contains('shop') || lower.contains('mart') || lower.contains('store') || lower.contains('retail') || lower.contains('market') || lower.contains('amazon') || lower.contains('flipkart')) {
+      category = 'Shopping';
+    } else if (lower.contains('bill') || lower.contains('electricity') || lower.contains('recharge') || lower.contains('airtel') || lower.contains('jio') || lower.contains('broadband')) {
+      category = 'Bills';
+    } else if (lower.contains('hospital') || lower.contains('pharmacy') || lower.contains('clinic') || lower.contains('medical')) {
+      category = 'Others'; // Medical mapped to Others
+    }
+
     return {
       'amount': amount,
       'merchant': merchant,
+      'category': category,
       'rawText': text,
     };
   }

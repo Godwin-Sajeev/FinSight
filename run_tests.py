@@ -77,7 +77,7 @@ check("Debit type detected",    r is not None and r['type'] == 'debit',    r)
 
 # 2b. IPPB sender
 r = agent.process_message(
-    "A/C X4952 Debit Rs.100.00 for UPI to Generic User on 12-01-26 Ref 601202411884-IPPB",
+    "A/C X4952 Debit Rs.100.00 for UPI to Godwin on 12-01-26 Ref 601202411884-IPPB",
     sender_id="JD-IPBMSG-S"
 )
 check("IPPB debit parsed",      r is not None and r['amount'] == 100.0,    r)

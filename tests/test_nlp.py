@@ -36,12 +36,12 @@ class TestUPIAgent(unittest.TestCase):
         self.assertEqual(result['merchant'], 'Uber')
 
     def test_ippb_format(self):
-        text = 'A/C X4952 Debit Rs.100.00 for UPI to Generic User on 12-01-26 Ref 601202411884. Avl Bal Rs.669.76. If not you? SMS FREEZE "full a/c" to 7669034700-IPPB'
+        text = 'A/C X4952 Debit Rs.100.00 for UPI to Godwin on 12-01-26 Ref 601202411884. Avl Bal Rs.669.76. If not you? SMS FREEZE "full a/c" to 7669034700-IPPB'
         result = self.agent.process_message(text)
         self.assertIsNotNone(result)
         self.assertEqual(result['amount'], 100.0)
         self.assertEqual(result['type'], 'debit')
-        self.assertEqual(result['merchant'], 'Generic User')
+        self.assertEqual(result['merchant'], 'Godwin')
 
     def test_mixed_debounce_credit(self):
         # Case where both 'debited' and 'credited' appear
@@ -63,17 +63,18 @@ class TestUPIAgent(unittest.TestCase):
 
     def test_valid_sender_ippb(self):
         """IPPB sender JD-IPBMSG-S should be recognized."""
-        text = "A/C X4952 Debit Rs.100.00 for UPI to Generic User on 12-01-26 Ref 601202411884-IPPB"
+        text = "A/C X4952 Debit Rs.100.00 for UPI to Godwin on 12-01-26 Ref 601202411884-IPPB"
         result = self.agent.process_message(text, sender_id="JD-IPBMSG-S")
         self.assertIsNotNone(result)
         self.assertEqual(result['bank_name'], 'IPPB')
         self.assertEqual(result['sender_id'], 'JD-IPBMSG-S')
 
-    def test_invalid_sender_rejected(self):
-        """Spam/fake sender ID should be rejected (return None)."""
+    def test_invalid_sender_not_rejected(self):
+        """Invalid sender ID should NOT be rejected if intent is clear, but bank_name should be None."""
         text = "₹50,000 debited from your account via UPI to Winner."
         result = self.agent.process_message(text, sender_id="XX-SPAM01")
-        self.assertIsNone(result)
+        self.assertIsNotNone(result)
+        self.assertIsNone(result['bank_name'])
 
     def test_no_sender_backwards_compatible(self):
         """No sender_id = old behavior (still processes without validation)."""

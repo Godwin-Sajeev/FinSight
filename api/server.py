@@ -187,7 +187,29 @@ def analyze_sms(req: SMSRequest):
         server_status="OK",
         user_id="USER"
     )
-    return {"rejected": False, "nlp": nlp_result, "ml": ml_result}
+
+    # ── Flatten ML result to match MLData.fromJson in Flutter ────────────────
+    alert = ml_result.get("transaction_alert", {})
+    ml_flat = {
+        "failure_probability":          ml_result.get("ml_failure_probability", 0.0),
+        "combined_failure_probability": ml_result.get("combined_failure_probability", 0.0),
+        "alert_level":                  alert.get("level", "LOW"),
+        "alert_message":                alert.get("message", "Transaction looks safe."),
+    }
+
+    # ── Flatten NLP result to match NLPData.fromJson in Flutter ──────────────
+    nlp_flat = {
+        "amount":      nlp_result.get("amount"),
+        "type":        nlp_result.get("type"),
+        "merchant":    nlp_result.get("merchant"),
+        "date":        nlp_result.get("date"),
+        "status":      nlp_result.get("status"),
+        "bank_name":   nlp_result.get("bank_name"),
+        "sender_id":   nlp_result.get("sender_id"),
+        "confidence":  nlp_result.get("confidence_score"),
+    }
+
+    return {"rejected": False, "nlp": nlp_flat, "ml": ml_flat}
 
 @app.post("/budget")
 def budget_summary(req: BudgetRequest):

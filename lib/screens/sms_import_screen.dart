@@ -11,6 +11,7 @@ import '../../providers/finance_provider.dart';
 import '../../core/models/transaction_model.dart';
 import 'package:flutter_sms_inbox/flutter_sms_inbox.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// A screen that lets users paste one or more bank SMS messages
 /// OR sync directly from their device's real SMS inbox.
@@ -266,7 +267,7 @@ class _SmsImportScreenState extends ConsumerState<SmsImportScreen> {
                       const Gap(8),
                       Expanded(
                         child: Text(
-                          'Paste a bank SMS and tap Analyze. NLP will extract the amount, merchant, and type — then auto-save it as a transaction.',
+                          'The app will now automatically read new SMS in the background. You do not need to press Sync every time. Initialize basic sync below:',
                           style: AppTypography.textTheme.labelSmall?.copyWith(
                               color: AppColors.primaryAccent),
                         ),
@@ -287,7 +288,17 @@ class _SmsImportScreenState extends ConsumerState<SmsImportScreen> {
                         borderRadius: BorderRadius.circular(AppSpacing.radius),
                       ),
                     ),
-                    onPressed: _syncing ? null : _syncRealInbox,
+                    onPressed: _syncing ? null : () async {
+                      await _syncRealInbox();
+                      // Save last sync time
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.setString('last_sync_time', DateTime.now().toIso8601String());
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                           const SnackBar(content: Text('Auto-Sync tracking enabled! Future SMS will be processed automatically.')),
+                        );
+                      }
+                    },
                     icon: _syncing
                         ? const SizedBox(
                             width: 18,
@@ -296,7 +307,7 @@ class _SmsImportScreenState extends ConsumerState<SmsImportScreen> {
                           )
                         : const Icon(LucideIcons.refreshCw, size: 18),
                     label: Text(
-                      _syncing ? 'Syncing Inbox...' : 'Sync Device Inbox (Real SMS)',
+                      _syncing ? 'Syncing Inbox...' : 'Initialize Auto-Sync',
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),

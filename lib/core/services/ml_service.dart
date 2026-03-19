@@ -15,7 +15,8 @@ class MLService {
   // Live Backend: Hugging Face Spaces (No card needed, 16GB RAM)
   // static const String _baseUrl = 'https://godwinsajeev-finsight-backend.hf.space';
   static const String _baseUrl = 'http://127.0.0.1:8001';
-  // 127.0.0.1 used in combination with `adb reverse tcp:8001 tcp:8001` to bypass Windows Firewall.
+  // Works via `adb reverse tcp:8001 tcp:8001` — tunnels emulator→host.
+  // Run that command every time the emulator restarts.
 
   // ── Authentication ─────────────────────────────────────────────────────────
 
@@ -273,8 +274,8 @@ class MLData {
 
   factory MLData.fromJson(Map<String, dynamic> json) {
     return MLData(
-      failureProbability:         (json['failure_probability']          as num).toDouble(),
-      combinedFailureProbability: (json['combined_failure_probability'] as num).toDouble(),
+      failureProbability:         (json['failure_probability']          as num?)?.toDouble() ?? 0.0,
+      combinedFailureProbability: (json['combined_failure_probability'] as num?)?.toDouble() ?? 0.0,
       alertLevel:                 json['alert_level']   ?? 'LOW',
       alertMessage:               json['alert_message'] ?? 'Transaction looks safe.',
     );

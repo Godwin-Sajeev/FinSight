@@ -8,11 +8,13 @@ import 'package:uuid/uuid.dart';
 class AddTransactionScreen extends ConsumerStatefulWidget {
   final String? initialTitle;
   final double? initialAmount;
+  final String? initialCategory;
   
   const AddTransactionScreen({
     super.key, 
     this.initialTitle, 
     this.initialAmount,
+    this.initialCategory,
   });
 
   @override
@@ -43,6 +45,9 @@ class _AddTransactionScreenState
     }
     if (widget.initialAmount != null && widget.initialAmount! > 0) {
       _amountController.text = widget.initialAmount!.toStringAsFixed(2);
+    }
+    if (widget.initialCategory != null && _categories.contains(widget.initialCategory)) {
+      _category = widget.initialCategory!;
     }
   }
 

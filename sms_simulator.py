@@ -32,7 +32,7 @@ DEMO_MESSAGES = [
     },
     {
         'sender_id': 'JD-IPBMSG-S',
-        'message':   'A/C X4952 Debit Rs.100.00 for UPI to Generic User on 12-01-26 Ref 601202411884. Avl Bal Rs.669.76-IPPB',
+        'message':   'A/C X4952 Debit Rs.100.00 for UPI to Godwin on 12-01-26 Ref 601202411884. Avl Bal Rs.669.76-IPPB',
         'desc':      '[OK] Valid IPPB debit SMS',
     },
     {

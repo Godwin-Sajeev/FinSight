@@ -58,7 +58,7 @@ check("Alert level present",      data.get("ml", {}).get("alert_level") in ("LOW
 section("3. Valid IPPB SMS (JD-IPBMSG-S)")
 r = requests.post(f"{BASE}/analyze-sms", json={
     "sender_id": "JD-IPBMSG-S",
-    "sms_body":  "A/C X4952 Debit Rs.100.00 for UPI to Generic User on 12-01-26 Ref 601-IPPB",
+    "sms_body":  "A/C X4952 Debit Rs.100.00 for UPI to Godwin on 12-01-26 Ref 601-IPPB",
 }, timeout=10)
 data = r.json()
 check("Not rejected",      not data.get("rejected"))

@@ -15,6 +15,12 @@ import '../../screens/sms_import_screen.dart';
 import '../../screens/add_transaction_screen.dart';
 import '../../core/services/ocr_service.dart';
 
+import 'package:flutter_sms_inbox/flutter_sms_inbox.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../providers/finance_provider.dart';
+import '../../core/models/transaction_model.dart';
+
 class MainNavScreen extends ConsumerStatefulWidget {
   const MainNavScreen({super.key});
 
@@ -50,6 +56,66 @@ class _MainNavScreenState extends ConsumerState<MainNavScreen>
       curve: Curves.easeOut,
     );
     _loadUserInfo();
+    _runSilentSmsSync();
+  }
+
+  Future<void> _runSilentSmsSync() async {
+    try {
+      final status = await Permission.sms.status;
+      if (!status.isGranted) return;
+
+      final prefs = await SharedPreferences.getInstance();
+      final lastSyncStr = prefs.getString('last_sync_time');
+      if (lastSyncStr == null) return;
+
+      final lastSync = DateTime.parse(lastSyncStr);
+      final query = SmsQuery();
+      final messages = await query.querySms(
+        kinds: [SmsQueryKind.inbox],
+        count: 20, // Only check recent to save battery
+      );
+
+      final newMessages = messages.where((m) => m.date != null && m.date!.isAfter(lastSync)).toList();
+      if (newMessages.isEmpty) return;
+
+      int addedCount = 0;
+      for (final msg in newMessages) {
+        final body = msg.body?.toLowerCase() ?? '';
+        if (body.contains('rs.') || body.contains('inr') || body.contains('₹') || body.contains('debited') || body.contains('credited') || body.contains('upi')) {
+          final result = await MLService.analyzeSms(smsBody: msg.body!, senderId: msg.address);
+          if (result != null && !result.rejected && result.nlp?.amount != null) {
+            final nlp = result.nlp!;
+            
+            // Basic category guess logic embedded here for the silent sync
+            String cat = 'General';
+            final mapM = (nlp.merchant ?? '').toLowerCase();
+            if (mapM.contains('swiggy') || mapM.contains('zomato') || mapM.contains('food')) cat = 'Food';
+            else if (mapM.contains('amazon') || mapM.contains('flipkart')) cat = 'Shopping';
+            else if (mapM.contains('uber') || mapM.contains('ola') || mapM.contains('travel')) cat = 'Travel';
+
+            final tx = TransactionModel(
+              title: nlp.merchant?.isNotEmpty == true ? nlp.merchant! : 'Auto Sync',
+              merchantName: nlp.merchant?.isNotEmpty == true ? nlp.merchant! : 'Unknown',
+              amount: nlp.amount!,
+              date: msg.date!,
+              category: cat,
+              isExpense: nlp.type != 'credit',
+            );
+            ref.read(transactionProvider.notifier).addTransaction(tx);
+            addedCount++;
+          }
+        }
+      }
+
+      await prefs.setString('last_sync_time', DateTime.now().toIso8601String());
+      if (addedCount > 0 && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('⚡ Auto-synced $addedCount new transaction(s) in background!')),
+        );
+      }
+    } catch (e) {
+      debugPrint("Silent sync failed: $e");
+    }
   }
 
   void _loadUserInfo() async {
@@ -166,6 +232,7 @@ class _MainNavScreenState extends ConsumerState<MainNavScreen>
                                 builder: (_) => AddTransactionScreen(
                                   initialTitle: result['merchant'],
                                   initialAmount: result['amount'],
+                                  initialCategory: result['category'],
                                 ),
                               ),
                             );

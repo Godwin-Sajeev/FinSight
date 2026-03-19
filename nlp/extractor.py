@@ -61,6 +61,10 @@ class EntityExtractor:
         elif any(w in text_lower for w in ['credited', 'credit', 'received', 'added', 'deposited']):
             entities['type'] = 'credit'
         
+        # Priority 4: Default to debit if "to" is present without credit keywords
+        elif " to " in text_lower:
+            entities['type'] = 'debit'
+        
         # 4. Determine Status
         if any(w in text_lower for w in ['failed', 'declined', 'unsuccessful']):
             entities['status'] = 'failed'
@@ -70,15 +74,35 @@ class EntityExtractor:
         # 5. Determine Merchant
         merchant_match = None
         
-        # Pattern A: "paid to X", "sent to X", "trf to X", "debited... to X"
-        if entities['type'] == 'debit':
-            match = re.search(r'(?i)\b(?:to|paid to|sent to|trf to|vpa)\s+([A-Za-z0-9@.\-]+)(?:\s+(?:on|at|via|using|ref|fees|failed|due)|$|\.)', text)
-            if match:
-                merchant_match = match.group(1)
-                
-        # Pattern B: "received from X" or "deposited in X"
-        elif entities['type'] == 'credit':
-            match = re.search(r'(?i)\b(?:from|received from|deposited in)\s+([A-Za-z0-9@.\-]+)(?:\s+(?:on|at|via|using|ref)|$|\.)', text)
+        # New Pattern: Direct VPA / UPI ID Match
+        # e.g., "to VPA anil@upi", "paid to somebody@okhdfc", "VPA 9876543210@ybl (John Doe)"
+        vpa_match = re.search(r'(?i)(?:vpa\s+)?([a-zA-Z0-9.-]+@[a-zA-Z]+)(?:\s*\(([^)]+)\))?', text)
+        if vpa_match:
+            # If the name is provided in parentheses, use the name! Otherwise, use the VPA.
+            if vpa_match.group(2):
+                merchant_match = vpa_match.group(2).strip()
+            else:
+                merchant_match = vpa_match.group(1).strip()
+            
+        # Specific Indian Bank Pattern: "credited to / debited to / sent to [NAME]"
+        if not merchant_match:
+            # Handles "debited and credited to [NAME] Ref"
+            bank_match = re.search(r'(?i)(?:credited to|paid to|sent to|trf to|debited to|transfer to)\s+(?:vpa\s+)?([^.]+?)(?:\s+(?:on|at|via|ref|using|id|val|bal|if|sms|failed|due)|$|\.)', text)
+            if bank_match:
+                merchant_match = bank_match.group(1).strip()
+        
+        # Combined Pattern: "to/from X" with better delimiter handling for multi-word names
+        if not merchant_match:
+            # Handles: "paid to John Doe", "sent to Uber", "received from Amazon India"
+            # Delimiters: on, at, via, ref, ., avl, bal, if, is, using, id, failed, due, fees
+            if entities['type'] == 'debit':
+                prefix = r'(?i)\b(?:to|paid to|sent to|trf to|vpa)\s+'
+            elif entities['type'] == 'credit':
+                prefix = r'(?i)\b(?:from|received from|deposited in)\s+'
+            else:
+                prefix = r'(?i)\b(?:to|from|paid to|sent to)\s+'
+            
+            match = re.search(prefix + r'(.+?)(?:\s+(?:on|at|via|using|ref|id|for|is|has|bal|avl|if|sms|failed|due|fees)|$|\.)', text)
             if match:
                 merchant_match = match.group(1)
 
@@ -90,6 +114,8 @@ class EntityExtractor:
                 merchant_match = info_match.group(1) or info_match.group(2)
 
         if merchant_match:
-            entities['merchant'] = re.sub(r'\s+', ' ', merchant_match).strip()
+            # Clean up the merchant name
+            cleaned = re.sub(r'(?i)^(vpa)\s+', '', merchant_match).strip()
+            entities['merchant'] = re.sub(r'\s+', ' ', cleaned).strip()
 
         return entities
